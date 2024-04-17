@@ -16,7 +16,7 @@ import { generateBlog, generateBlogResponse } from "$lib/services/generateBlog";
 import type { ServiceModelSelection } from "$lib/services/generateBlog";
 import { postsStore } from "$lib/stores/postStore";
 import { fetchPostBySlug } from "$lib/services/postService";
-export let featuredImageUrl: string = "";
+    import LoginGuard from "$lib/components/LoginGuard.svelte";
 let selectedService = availableServices[0].name;
 let selectedModel = availableServices[0].models[0];
 let post: PostsResponse | undefined;
@@ -108,6 +108,7 @@ $: if (post) {
 }
 </script>
 
+<LoginGuard>
 <main class="prose prose-sm sm:prose lg:prose-lg xl:prose-xl mx-auto p-4">
   <ServiceSelector
     bind:selectedService={selectedService}
@@ -195,6 +196,7 @@ $: if (post) {
     </div>
   {/if}
 </main>
+</LoginGuard>
 
 <style>
 </style>

@@ -40,7 +40,6 @@ services:
     working_dir: /app/pb
     environment:
       - HOME=/app/pb
-      - AUDITLOG=  # Set this if needed, or remove this line
     volumes:
       - ./pb:/app/pb
       - ./sk:/app/sk
@@ -48,7 +47,7 @@ services:
   sk:
     image: node:alpine
     user: 1000:1000  # Replace with your actual UID:GID
-    command: sh -c "npx pnpm install && pnpm run build"
+    command: sh -c "npm install -g pnpm && npx pnpm install && pnpm run build"
     volumes:
       - ./sk:/app/sk
       - ./pb:/app/pb

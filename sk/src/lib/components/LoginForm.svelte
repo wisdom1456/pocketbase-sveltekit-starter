@@ -233,7 +233,7 @@ async function submit() {
               d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"
             ></path>
           </svg>
-          <label>{errorMessage}</label>
+          <label for="errorMessageInput">{errorMessage}</label>
         </div>
       </div>
     {/if}
@@ -254,7 +254,7 @@ async function submit() {
               d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
             ></path>
           </svg>
-          <label>{successMessage}</label>
+          <label for="successMessageInput">{successMessage}</label>
         </div>
       </div>
     {/if}

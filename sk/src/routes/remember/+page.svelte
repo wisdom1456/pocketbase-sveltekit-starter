@@ -4,6 +4,7 @@ import type { PostsResponse } from "$lib/pocketbase/generated-types";
 import { metadata } from "$lib/app/stores";
 import PostList from "$lib/components/PostList.svelte";
 import { onMount } from "svelte";
+    import LoginGuard from "$lib/components/LoginGuard.svelte";
 let posts: PostsResponse[] = [];
 postsStore.subscribe((value) => {
   posts = value.posts;
@@ -16,6 +17,8 @@ onMount(async () => {
 });
 </script>
 
+
+<LoginGuard>
 <div>
   <div class="mx-auto max-w-7xl px-6 lg:px-8">
     {#if Array.isArray(posts)}
@@ -30,3 +33,4 @@ onMount(async () => {
     {/if}
   </div>
 </div>
+</LoginGuard>

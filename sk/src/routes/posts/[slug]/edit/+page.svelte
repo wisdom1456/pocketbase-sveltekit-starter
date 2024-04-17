@@ -17,6 +17,7 @@ import {
   tagPrompt,
   blogSummaryPrompt,
 } from "$lib/utils/prompts";
+    import LoginGuard from "$lib/components/LoginGuard.svelte";
 let post: PostsResponse | undefined;
 let tagString = "";
 $: slug = $page.params.slug;
@@ -122,6 +123,7 @@ async function generateFromChatGPT(userPrompt: string) {
 }
 </script>
 
+<LoginGuard>
 <main class="container mx-auto my-12 px-4 sm:px-6 lg:px-8">
   {#if post}
     <div class="grid gap-8 lg:grid-cols-3">
@@ -230,3 +232,4 @@ async function generateFromChatGPT(userPrompt: string) {
     <p>Loading post...</p>
   {/if}
 </main>
+</LoginGuard>

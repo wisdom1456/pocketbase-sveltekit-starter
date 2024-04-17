@@ -10,6 +10,7 @@ import { onMount } from "svelte";
 import { postsStore } from "$lib/stores/postStore";
 import { fetchPosts } from "$lib/services/postService";
 import { goto } from "$app/navigation";
+    import LoginGuard from "$lib/components/LoginGuard.svelte";
 
 async function getFeaturedImageUrl(post: any) {
     if (post.featuredImage) {
@@ -45,6 +46,8 @@ postsStore.subscribe((value) => {
 });
 </script>
 
+
+<LoginGuard>
 {#each posts as post (post.id)}
     <div
       class="card bg-base-300 flex w-full flex-col justify-between p-4 shadow-xl"
@@ -102,3 +105,4 @@ postsStore.subscribe((value) => {
     </div>
   </div>
 {/if}
+</LoginGuard>

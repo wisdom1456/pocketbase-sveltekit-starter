@@ -4,6 +4,7 @@
   import { page } from "$app/stores";
   import { client } from "$lib/pocketbase";
   import PostList from "$lib/components/PostList.svelte";
+    import LoginGuard from "$lib/components/LoginGuard.svelte";
 
   let posts: PostsResponse[] = [];
   let tag: TagsResponse | undefined;
@@ -30,6 +31,8 @@
   });
 </script>
 
+
+<LoginGuard>
 <div class="container mx-auto px-4">
   {#if tag}
     <h1 class="text-4xl font-bold mb-8">Blogs tagged with "{tag.title}"</h1>
@@ -43,3 +46,4 @@
     <p>Tag not found.</p>
   {/if}
 </div>
+</LoginGuard>

@@ -16,7 +16,7 @@ import (
 var tpls *template.Template
 
 func init() {
-	tpls = template.Must(template.ParseGlob("data/email_templates/*"))
+	tpls = template.Must(template.ParseGlob("./data/email_templates/*"))
 }
 
 // set IgnoreEmailVisibilityFlag for the record and it's expanded records (recursively)

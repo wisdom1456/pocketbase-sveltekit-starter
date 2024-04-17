@@ -19,6 +19,7 @@ import ImageWall from "$lib/components/ImageWall.svelte";
 import { generateBlog } from "$lib/services/generateBlog";
 
 import { serviceModelSelectionStore } from "$lib/app/stores";
+    import LoginGuard from "$lib/components/LoginGuard.svelte";
 
 const dispatch = createEventDispatcher();
 let inputText = "";
@@ -196,6 +197,7 @@ function selectInterpretation(interpretation: string) {
 }
 </script>
 
+<LoginGuard>
 <div>
   {#if !formSubmitted}
     {#if isLoading.content}
@@ -281,3 +283,4 @@ function selectInterpretation(interpretation: string) {
     {/key}
   {/if}
 </div>
+</LoginGuard>

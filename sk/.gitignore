@@ -2,7 +2,6 @@
 node_modules
 /playwright-report
 /build
-/.svelte-kit
 /package
 .env
 .env.*

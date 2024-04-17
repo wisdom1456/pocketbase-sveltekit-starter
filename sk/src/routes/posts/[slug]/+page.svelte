@@ -6,6 +6,7 @@
   import type { PostsResponse } from "$lib/pocketbase/generated-types";
   import Markdown from "svelte-markdown";
   import TagGroup from "$lib/components/TagGroup.svelte";
+    import LoginGuard from "$lib/components/LoginGuard.svelte";
 
   let post: PostsResponse | undefined;
   $: slug = $page.params.slug;
@@ -26,6 +27,7 @@
   });
 </script>
 
+<LoginGuard>
 {#if post}
   <div class="prose prose-sm sm:prose lg:prose-lg xl:prose-xl mx-auto p-4">
     {#if post.featuredImage}
@@ -45,3 +47,4 @@
 {:else}
   <p>Loading post...</p>
 {/if}
+</LoginGuard>
