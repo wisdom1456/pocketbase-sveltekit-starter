@@ -16,7 +16,7 @@ const ImageWall = create_ssr_component(($$result, $$props, $$bindings, slots) =>
     updateImageWallList(images);
   }
   return `<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">${each(imageWallList, (pic) => {
-    return `<img${add_attribute("src", pic, 0)} alt="Background" class="w-full h-auto">`;
+    return `<img${add_attribute("src", pic, 0)} alt="Background" class="h-auto w-full">`;
   })}</div>`;
 });
 function updateProgressBar(step) {
@@ -61,7 +61,7 @@ const Page = create_ssr_component(($$result, $$props, $$bindings, slots) => {
             }
           },
           {}
-        )} <input type="text" class="input input-bordered bg-base-100 w-full" placeholder="Enter thoughts here"${add_attribute("value", chatGptPrompt, 0)}> <div class="text-right" data-svelte-h="svelte-dyxuw0"><button type="submit" class="btn btn-primary">Generate</button></div> <div class="border-accent border">${validate_component(ImageWall, "ImageWall").$$render($$result, {}, {}, {})}</div></form></main>`}`}</div>`;
+        )} <input type="text" class="input input-bordered bg-base-100 w-full" placeholder="Enter thoughts here"${add_attribute("value", chatGptPrompt, 0)}> <div class="text-right" data-svelte-h="svelte-dyxuw0"><button type="submit" class="btn btn-primary">Generate</button></div> <div class="border-accent border border-4">${validate_component(ImageWall, "ImageWall").$$render($$result, {}, {}, {})}</div></form></main>`}`}</div>`;
       }
     })}`;
   } while (!$$settled);

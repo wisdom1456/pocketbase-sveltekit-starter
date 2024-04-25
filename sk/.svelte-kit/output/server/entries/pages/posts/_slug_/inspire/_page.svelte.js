@@ -27,7 +27,7 @@ const Page = create_ssr_component(($$result, $$props, $$bindings, slots) => {
     $page.params.slug;
     $$rendered = `${validate_component(LoginGuard, "LoginGuard").$$render($$result, {}, {}, {
       default: () => {
-        return `<main class="prose prose-sm sm:prose lg:prose-lg xl:prose-xl mx-auto p-4">${validate_component(ServiceSelector, "ServiceSelector").$$render(
+        return `<main class="prose prose-sm mx-auto p-4 sm:prose lg:prose-lg xl:prose-xl">${validate_component(ServiceSelector, "ServiceSelector").$$render(
           $$result,
           { selectedService, selectedModel },
           {

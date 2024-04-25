@@ -26,7 +26,7 @@ const TagGroup = create_ssr_component(($$result, $$props, $$bindings, slots) => 
     }
   }
   return `${tags.length > 0 ? `<div class="flex flex-wrap pb-2 pt-4">${each(tags, (tag, i) => {
-    return `${i < 2 ? `<a${add_attribute("href", `/tags/${tag}`, 0)} class="tag bg-primary-content text-accent hover:bg-primary-focus mb-2 mr-2 inline-block cursor-pointer px-2 py-1 text-sm svelte-1h6kmfq">#${escape(tag)} </a>` : ``}`;
+    return `${i < 2 ? `<a${add_attribute("href", `/tags/${tag}`, 0)} class="tag hover:bg-primary-focus mb-2 mr-2 inline-block cursor-pointer bg-primary-content px-2 py-1 text-sm text-accent svelte-1h6kmfq">#${escape(tag)} </a>` : ``}`;
   })}</div>` : `<div class="px-6 pb-2 pt-4 text-sm font-semibold" data-svelte-h="svelte-fhk8h1">No tags</div>`}`;
 });
 function createPostsStore() {
@@ -53,10 +53,10 @@ const PostCard = create_ssr_component(($$result, $$props, $$bindings, slots) => 
   let { post } = $$props;
   if ($$props.post === void 0 && $$bindings.post && post !== void 0)
     $$bindings.post(post);
-  return `<div class="card bg-base-100 border-secondary border-3 m-2 flex flex-1 flex-col justify-between border shadow-xl"><div><figure> ${post.expand?.featuredImage ? (() => {
+  return `<div class="border-3 card m-2 flex flex-1 flex-col justify-between border border-secondary bg-base-100 shadow-xl"><div><figure> ${post.expand?.featuredImage ? (() => {
     let imageRecord = post.expand.featuredImage, imageUrl = imageRecord && imageRecord.file ? client.getFileUrl(imageRecord, imageRecord.file) : "";
     return `  <img${add_attribute("src", imageUrl, 0)}${add_attribute("alt", post.title, 0)} class="aspect-[16/9] w-full rounded-t-lg object-cover sm:aspect-[2/1] lg:aspect-[3/2]">`;
-  })() : `<img src="https://via.placeholder.com/800x400.png?text=AI+Blog" alt="Placeholder" class="aspect-[16/9] w-full rounded-t-lg object-cover sm:aspect-[2/1] lg:aspect-[3/2]">`}</figure> <div class=""><div class="prose items-center p-2"><time${add_attribute("datetime", post.updated, 0)} class="text-accent">${escape(new Date(post.updated).toLocaleDateString())}</time></div> <div class="group relative px-2"><a${add_attribute("href", `/posts/${post.slug}`, 0)} class="prose-lg text-primary hover:text-secondary font-bold">${escape(post.title)}</a> <div class="prose-sm text-base-content mt-3 line-clamp-6 text-justify">${validate_component(SvelteMarkdown, "Markdown").$$render($$result, { source: post.blogSummary }, {}, {})}</div></div></div></div> <div><div class="p-2">${validate_component(TagGroup, "TagGroup").$$render($$result, { post }, {}, {})} <div class="card-actions mt-4 justify-between"><a class="btn btn-outline"${add_attribute("href", `/posts/${post.slug}/edit`, 0)}>Edit</a> <a class="btn btn-outline"${add_attribute("href", `/posts/${post.slug}/inspire`, 0)}>Inspire</a> <a class="btn btn-outline btn-secondary"${add_attribute("href", `/posts/${post.slug}#delete`, 0)}>Delete</a></div></div></div></div>`;
+  })() : `<img src="https://via.placeholder.com/800x400.png?text=AI+Blog" alt="Placeholder" class="aspect-[16/9] w-full rounded-t-lg object-cover sm:aspect-[2/1] lg:aspect-[3/2]">`}</figure> <div class=""><div class="prose items-center p-2"><time${add_attribute("datetime", post.updated, 0)} class="text-accent">${escape(new Date(post.updated).toLocaleDateString())}</time></div> <div class="group relative px-2"><a${add_attribute("href", `/posts/${post.slug}`, 0)} class="prose-lg font-bold text-primary hover:text-secondary">${escape(post.title)}</a> <div class="prose-sm mt-3 line-clamp-6 text-justify text-base-content">${validate_component(SvelteMarkdown, "Markdown").$$render($$result, { source: post.blogSummary }, {}, {})}</div></div></div></div> <div><div class="p-2">${validate_component(TagGroup, "TagGroup").$$render($$result, { post }, {}, {})} <div class="card-actions mt-4 justify-between"><a class="btn btn-outline"${add_attribute("href", `/posts/${post.slug}/edit`, 0)}>Edit</a> <a class="btn btn-outline"${add_attribute("href", `/posts/${post.slug}/inspire`, 0)}>Inspire</a> <a class="btn btn-outline btn-secondary"${add_attribute("href", `/posts/${post.slug}#delete`, 0)}>Delete</a></div></div></div></div>`;
 });
 const PostList = create_ssr_component(($$result, $$props, $$bindings, slots) => {
   let { posts = [] } = $$props;
