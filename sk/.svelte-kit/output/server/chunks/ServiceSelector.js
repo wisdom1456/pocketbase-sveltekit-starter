@@ -1,5 +1,5 @@
-import { c as create_ssr_component, d as createEventDispatcher, a as each, b as add_attribute, e as escape } from "./ssr.js";
-import "./index.js";
+import { c as create_ssr_component, f as createEventDispatcher, b as each, a as add_attribute, e as escape } from "./ssr.js";
+import "./index2.js";
 const availableServices = [
   {
     name: "Anthropic",

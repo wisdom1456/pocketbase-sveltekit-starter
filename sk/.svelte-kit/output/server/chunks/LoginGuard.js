@@ -1,6 +1,6 @@
-import { s as subscribe, c as compute_slots } from "./utils.js";
+import { s as subscribe, b as compute_slots } from "./utils.js";
 import { c as create_ssr_component, v as validate_component } from "./ssr.js";
-import { a as authModel, g as goto } from "./index.js";
+import { a as authModel, g as goto } from "./index2.js";
 import { Admin } from "pocketbase";
 import { L as LoginForm } from "./LoginForm.js";
 const LoginGuard = create_ssr_component(($$result, $$props, $$bindings, slots) => {

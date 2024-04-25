@@ -1,1 +1,0 @@
-import{w as e}from"./singletons.7ecd36fa.js";import"./index.3c75d8e0.js";import"./public.d750e624.js";import"./Alerts.057b49a9.js";const i=e({}),a=e({selectedService:"",selectedModel:""});export{i as m,a as s};

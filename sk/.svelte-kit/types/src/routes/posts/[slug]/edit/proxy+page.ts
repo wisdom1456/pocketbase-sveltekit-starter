@@ -11,9 +11,11 @@ export const load = async function ({ params }: Parameters<PageLoad>[0]) {
   const { slug } = params;
 
   try {
-    const { items } = await client.collection("posts").getList(undefined, undefined, {
-      filter: `slug='${slug}'`,
-    });
+    const { items } = await client
+      .collection("posts")
+      .getList(undefined, undefined, {
+        filter: `slug='${slug}'`,
+      });
 
     if (items.length === 0) {
       throw new Error("Post not found");
@@ -40,11 +42,13 @@ export const load = async function ({ params }: Parameters<PageLoad>[0]) {
       featuredImage: string | null;
       prompt: string;
     };
-    
+
     let featuredImageUrl = "";
 
     if (post.featuredImage) {
-      const image = await client.collection("images").getOne(post.featuredImage);
+      const image = await client
+        .collection("images")
+        .getOne(post.featuredImage);
 
       if (image && image.file) {
         featuredImageUrl = client.getFileUrl(image, image.file);

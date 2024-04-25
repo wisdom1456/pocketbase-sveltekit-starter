@@ -1,4 +1,4 @@
-import { c as client } from "../../../../../chunks/index.js";
+import { c as client } from "../../../../../chunks/index2.js";
 const load = async function({ params: { coll, id } }) {
   const logs = await client.collection("auditlog").getFullList({
     // TODO: access control

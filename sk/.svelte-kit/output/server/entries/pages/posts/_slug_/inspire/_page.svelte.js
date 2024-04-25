@@ -1,12 +1,16 @@
 import { s as subscribe } from "../../../../../chunks/utils.js";
 import { c as create_ssr_component, v as validate_component } from "../../../../../chunks/ssr.js";
 import { p as page } from "../../../../../chunks/stores.js";
-import { s as serviceModelSelectionStore } from "../../../../../chunks/stores2.js";
-import "../../../../../chunks/index.js";
+import { w as writable } from "../../../../../chunks/index.js";
+import "../../../../../chunks/index2.js";
 import "../../../../../chunks/Alerts.js";
 import "marked";
 /* empty css                                                            */import { a as availableServices, S as ServiceSelector } from "../../../../../chunks/ServiceSelector.js";
 import { L as LoginGuard } from "../../../../../chunks/LoginGuard.js";
+const serviceModelSelectionStore = writable({
+  selectedService: "",
+  selectedModel: ""
+});
 const Page = create_ssr_component(($$result, $$props, $$bindings, slots) => {
   let $page, $$unsubscribe_page;
   let $$unsubscribe_serviceModelSelectionStore;

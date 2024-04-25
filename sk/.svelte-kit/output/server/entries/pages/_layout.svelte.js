@@ -1,8 +1,8 @@
 import { s as subscribe, a as set_store_value } from "../../chunks/utils.js";
-import { c as create_ssr_component, o as onDestroy, b as add_attribute, e as escape, v as validate_component, a as each, f as add_classes } from "../../chunks/ssr.js";
+import { c as create_ssr_component, o as onDestroy, a as add_attribute, e as escape, v as validate_component, b as each, d as add_classes } from "../../chunks/ssr.js";
 import PocketBase from "pocketbase";
-import { m as metadata } from "../../chunks/stores2.js";
-import { a as authModel, c as client, b as beforeNavigate } from "../../chunks/index.js";
+import { m as metadata } from "../../chunks/metadataStore.js";
+import { a as authModel, c as client, b as beforeNavigate } from "../../chunks/index2.js";
 import { A as Alerts } from "../../chunks/Alerts.js";
 import { b as base } from "../../chunks/paths.js";
 import { p as page } from "../../chunks/stores.js";
@@ -381,11 +381,13 @@ const Nav = create_ssr_component(($$result, $$props, $$bindings, slots) => {
     return `<li class="p-4"><a${add_attribute("href", path, 0)}>${escape(label)}</a></li>`;
   })}`}</ul></div> <div class="navbar-end">${validate_component(LoginBadge, "LoginBadge").$$render($$result, {}, {}, {})}</div></div></nav>`;
 });
-new PocketBase(`$("http://localhost:8090")`);
+const Footer = create_ssr_component(($$result, $$props, $$bindings, slots) => {
+  return ` <footer class="footer footer-center bg-base-300 text-base-content py-8" data-svelte-h="svelte-1fansbt"><div><p class="font-bold">mind.ai</p> <p>Cultivating Brilliant Ideas Since 2009</p> <p>modible - 2024 - All right reserved</p></div> <div><div class="grid grid-flow-col gap-4"><a href="/"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" class="fill-current"><path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z"></path></svg></a> <a href="/"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" class="fill-current"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"></path></svg></a> <a href="/"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" class="fill-current"><path d="M9 8h-3v4h3v12h5v-12h3.642l.358-4h-4v-1.667c0-.955.192-1.333 1.115-1.333h2.885v-5h-3.808c-3.596 0-5.192 1.583-5.192 4.615v3.385z"></path></svg></a></div></div></footer>`;
+});
+new PocketBase(`$("http://localhost:8090/")`);
 const Layout = create_ssr_component(($$result, $$props, $$bindings, slots) => {
   let title;
   let description;
-  let headline;
   let $metadata, $$unsubscribe_metadata;
   $$unsubscribe_metadata = subscribe(metadata, (value) => $metadata = value);
   beforeNavigate(() => {
@@ -393,9 +395,9 @@ const Layout = create_ssr_component(($$result, $$props, $$bindings, slots) => {
   });
   title = $metadata.title ? $metadata.title + " | " + site.name : site.name;
   description = $metadata.description ?? site.description;
-  headline = $metadata.headline ?? $metadata.title;
+  $metadata.headline ?? $metadata.title;
   $$unsubscribe_metadata();
-  return `${$$result.head += `<!-- HEAD_svelte-1law5hj_START -->${$$result.title = `<title>${escape(title)}</title>`, ""}<meta name="description"${add_attribute("content", description, 0)}><!-- HEAD_svelte-1law5hj_END -->`, ""} <div class="flex min-h-screen h-screen flex-col"><header>${validate_component(Nav, "Nav").$$render($$result, {}, {}, {})}</header> <main class="flex-grow"><div class="pt-4"><div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8"><div class="mx-auto max-w-2xl text-center">${headline ? `<h1 class="text-primary text-3xl font-bold tracking-tight sm:text-4xl">${escape(headline)}</h1>` : ``} ${validate_component(Alerts, "Alerts").$$render($$result, {}, {}, {})}</div> ${slots.default ? slots.default({}) : ``}</div></div></main> <footer class="py-4"><div class="mx-auto max-w-7xl px-4 text-center sm:px-6 lg:px-8"><p class="text-base-content text-sm">© ${escape((/* @__PURE__ */ new Date()).getFullYear())} ${escape(site.name)}. All rights reserved.</p></div></footer></div>`;
+  return `${$$result.head += `<!-- HEAD_svelte-1law5hj_START -->${$$result.title = `<title>${escape(title)}</title>`, ""}<meta name="description"${add_attribute("content", description, 0)}><!-- HEAD_svelte-1law5hj_END -->`, ""} <div class="flex min-h-screen h-screen flex-col"><header>${validate_component(Nav, "Nav").$$render($$result, {}, {}, {})}</header> <main class="flex-grow"><div class="pt-4"><div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8"><div class="mx-auto max-w-2xl text-center">${validate_component(Alerts, "Alerts").$$render($$result, {}, {}, {})}</div> ${slots.default ? slots.default({}) : ``}</div></div></main> ${validate_component(Footer, "Footer").$$render($$result, {}, {}, {})}</div>`;
 });
 export {
   Layout as default

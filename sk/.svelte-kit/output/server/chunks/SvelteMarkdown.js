@@ -1,5 +1,5 @@
-import { c as create_ssr_component, a as each, v as validate_component, m as missing_component, e as escape, g as getContext, b as add_attribute, d as createEventDispatcher, s as setContext } from "./ssr.js";
-import { e as compute_rest_props } from "./utils.js";
+import { c as create_ssr_component, b as each, v as validate_component, m as missing_component, e as escape, g as getContext, a as add_attribute, f as createEventDispatcher, s as setContext } from "./ssr.js";
+import { c as compute_rest_props } from "./utils.js";
 import { Slugger, Lexer } from "marked";
 function supressWarnings() {
   const origWarn = console.warn;

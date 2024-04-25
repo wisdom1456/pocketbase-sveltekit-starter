@@ -97,7 +97,7 @@ const options = {
   root: Root,
   service_worker: false,
   templates: {
-    app: ({ head, body, assets, nonce, env }) => '<!doctype html>\n<html lang="en" class="h-full" data-theme="dark">\n  <head>\n    <meta charset="utf-8" />\n    <link rel="icon" href="' + assets + '/favicon.ico" />\n    <meta name="viewport" content="width=device-width" />\n    ' + head + "\n  </head>\n  <body>\n    <div>" + body + "</div>\n  </body>\n</html>\n",
+    app: ({ head, body, assets, nonce, env }) => '<!doctype html>\n<html lang="en" class="h-full" data-theme="dark">\n  <head>\n    <meta charset="utf-8" />\n    <link rel="icon" href="' + assets + '/favicon.ico" />\n    <meta name="viewport" content="width=device-width" />\n    <meta name="theme-color" content="#000000" />\n    <meta\n      name="description"\n      content="mind.ai - AI-powered journaling and mind garden application"\n    />\n    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />\n    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />\n    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />\n    <link rel="manifest" href="/site.webmanifest" />\n    <meta name="robots" content="index, follow" />\n    ' + head + "\n  </head>\n  <body>\n    <div>" + body + "</div>\n  </body>\n</html>\n",
     error: ({ status, message }) => '<!doctype html>\n<html lang="en">\n	<head>\n		<meta charset="utf-8" />\n		<title>' + message + `</title>
 
 		<style>
@@ -169,7 +169,7 @@ const options = {
 		<div class="error">
 			<span class="status">` + status + '</span>\n			<div class="message">\n				<h1>' + message + "</h1>\n			</div>\n		</div>\n	</body>\n</html>\n"
   },
-  version_hash: "17z63yr"
+  version_hash: "c6a0yb"
 };
 function get_hooks() {
   return {};

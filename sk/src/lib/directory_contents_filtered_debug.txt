@@ -1,0 +1,3769 @@
+Path: D:\Modible\Software\pocketbase-sveltekit-starter\sk\src\lib\config.ts
+Contents:
+export const site = {
+  name: "mind",
+  source_url: "https://modible.com/mind",
+  description:
+    "Capture your inspiration and ideas with mind. A simple and elegant journaling app that helps you stay organized.",
+};
+
+
+Path: D:\Modible\Software\pocketbase-sveltekit-starter\sk\src\lib\textGen.py
+Contents:
+
+import os
+import fnmatch
+
+def is_excluded(file_path, exclude_patterns):
+    for pattern in exclude_patterns:
+        if fnmatch.fnmatch(file_path, pattern):
+            print(f"Excluded by pattern {pattern}: {file_path}")
+            return True
+    return False
+
+def is_binary(file_path):
+    try:
+        with open(file_path, 'rb') as file:
+            if b'\0' in file.read(1024):
+                print(f"Identified as binary: {file_path}")
+                return True
+    except Exception as e:
+        print(f"Error checking if binary {file_path}: {e}")
+    return False
+
+def generate_tree_view(start_dir, tree, prefix=''):
+    tree_view = ''
+    for index, (path, sub_tree) in enumerate(tree.items()):
+        connector = "└── " if index == len(tree) - 1 else "├── "
+        tree_view += f"{prefix}{connector}{os.path.basename(path)}\n"
+        if isinstance(sub_tree, dict):  # If the item is a directory
+            extension = "    " if index == len(tree) - 1 else "│   "
+            tree_view += generate_tree_view(path, sub_tree, prefix=prefix + extension)
+    return tree_view
+
+def parse_directory_to_file(output_file_name):
+    start_dir = os.getcwd()
+    output_file_path = os.path.join(start_dir, output_file_name)
+
+    exclude_patterns = [
+        '*/.cache*', '*/.local*', '*/.npm*', '*/.env*', '*/.ash_history*',
+        '*/docker-compose.override.yml*', '*/pocketbase.exe', '*/pocketbase*.zip', '*/pb_data*', 
+        '*/tmp*', '*/.DS_Store*', '*/node_modules*', '*/playwright-report*', '*/build*', 
+        '*/.svelte-kit*', '*/package*', '*/.env*', '*/.env.*', '!*/.env.example*', '*/.txt',
+        '*.pyc', '*.log', '*~', '*.tmp', '*.bak', '*.swp', '*.mod', '*/oldMigrations*',
+        '*.dll', '*.exe', '*.png', '*.jpg', '*.jpeg', '*.gif', '*/.git*', '*/pb_migrations*',
+        '*.yml', '*.yaml', '.gitignore', '*.sum', 'directory_contents_filtered_debug.txt','textGen.*' # Additional patterns
+    ]
+
+    tree_structure = {}
+    with open(output_file_path, 'w', encoding='utf-8') as output_file:
+        print(f"Starting directory traversal from {start_dir}")
+        for root, dirs, files in os.walk(start_dir):
+            print(f"Processing directory: {root}")
+            dirs[:] = [d for d in dirs if not is_excluded(os.path.join(root, d), exclude_patterns)]
+            files = [f for f in files if not is_excluded(os.path.join(root, f), exclude_patterns) and os.path.join(root, f) != output_file_path]
+            
+            # Update tree_structure
+            path_parts = root.replace(start_dir, '').strip(os.sep).split(os.sep)
+            current_level = tree_structure
+            for part in path_parts:
+                current_level = current_level.setdefault(part, {})
+            for file in files:
+                current_level[file] = {}
+
+            for file in files:
+                file_path = os.path.join(root, file)
+                if is_binary(file_path):
+                    continue
+                
+                try:
+                    with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                        contents = f.read()
+                    output_file.write(f"Path: {file_path}\nContents:\n{contents}\n\n")
+                    print(f"Included: {file_path}")
+                except Exception as e:
+                    print(f"Error processing file {file_path}: {e}")
+        
+        # Generate and write the tree view
+        tree_view = generate_tree_view(start_dir, tree_structure)
+        output_file.write(f"Project Tree View:\n{tree_view}")
+
+# Example usage
+output_file_name = "directory_contents_filtered_debug.txt"
+parse_directory_to_file(output_file_name)
+
+
+Path: D:\Modible\Software\pocketbase-sveltekit-starter\sk\src\lib\app\stores.ts
+Contents:
+import { goto } from "$app/navigation";
+import { authModel, client, save } from "$lib/pocketbase";
+import type { PostsResponse, PostsRecord } from "$lib/pocketbase/generated-types";
+import { ensureTagsExist, generateImageFromDreamStudio } from "$lib/utils/api";
+import { alertOnFailure } from "$lib/pocketbase/ui";
+import {
+  promptFormat,
+  titlePrompt,
+  tagPrompt,
+  blogSummaryPrompt,
+  imagePrompt,
+} from "$lib/utils/prompts";
+import { get, writable } from 'svelte/store';
+import type { ServiceModelSelection } from '$lib/services/generateBlog';
+
+export interface Metadata {
+  title?: string;
+  description?: string;
+  headline?: string;
+}
+
+export const metadata = writable<Metadata>({});
+
+// Define the structure of the post data
+interface PostData {
+  title: string;
+  slug: string;
+  body: string;
+  blogSummary: string;
+  featuredImage: string;
+  prompt: string;
+  userid: string;
+  tags: string[];
+}
+
+export const serviceModelSelectionStore = writable<ServiceModelSelection>({
+  selectedService: '',
+  selectedModel: '',
+});
+
+
+// Function to call the API
+async function callAPI(selectedService: string, selectedModel: string, inputText: string): Promise<string> {
+  if (!selectedService || !selectedModel) {
+    throw new Error("Service or model not selected.");
+  }
+
+  const response = await fetch(`/api/${selectedService.toLowerCase()}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text: inputText, model: selectedModel }),
+  });
+
+  if (!response.ok) {
+    throw new Error("Network response was not ok");
+  }
+
+  const data = await response.json();
+  return data.result;
+}
+
+// Main function to generate and save the blog post
+export async function generateBlog(
+  userInput: string,
+  authModel: any
+): Promise<void> {
+  /* if (!authModel?.id) {
+    console.error("User is not logged in.");
+    alert("Please log in to save your post.");
+    return;
+  } */
+
+  let post: PostData = {
+    title: "",
+    slug: "",
+    body: "",
+    blogSummary: "",
+    featuredImage: "",
+    prompt: "",
+    userid: authModel.id,
+    tags: [],
+  };
+
+  try {
+    // Get the selected service and model from the store
+    const { selectedService, selectedModel } = get(serviceModelSelectionStore);
+
+    // Generate content
+    post.body = await callAPI(selectedService, selectedModel, `${promptFormat}'${userInput}'`);
+    post.title = await callAPI(selectedService, selectedModel, `${titlePrompt}'${post.body}'`);
+    const tagString = await callAPI(selectedService, selectedModel, `${tagPrompt}'${post.body}'`);
+    post.blogSummary = await callAPI(selectedService, selectedModel, `${blogSummaryPrompt}'${post.body}'`);
+
+    // Generate slug
+    post.slug = post.title.toLowerCase().replace(/\s+/g, "-").replace(/[^\w-]+/g, "").substring(0, 50);
+    post.prompt = userInput;
+
+    // Generate image
+    const imageResponseText = await callAPI(selectedService, selectedModel, `${imagePrompt}'${post.body}'`);
+    const base64Image = await generateImageFromDreamStudio(imageResponseText);
+
+    // Upload image and save post
+    const imageBlob = await fetch(`data:image/png;base64,${base64Image}`).then((res) => res.blob());
+    if (imageBlob.size > 5242880) {
+      throw new Error("Image size exceeds the maximum limit of 5MB.");
+    }
+    const formData = new FormData();
+    formData.append("file", imageBlob, "postImage.png");
+    const createdImageRecord = await client.collection("images").create(formData);
+    post.featuredImage = createdImageRecord.id;
+
+    // Save tags
+    const tagsArray = tagString.split(",").map((tag) => tag.trim()).filter((tag) => tag);
+    const tagIds = await ensureTagsExist(tagsArray);
+    post.tags = tagIds;
+
+    // Create the post
+    const createdPost = await save("posts", post as PostsRecord, true) as unknown as PostsResponse;
+
+    // Redirect to the newly created post
+    goto(`${import.meta.env.VITE_APP_SK_URL}/posts/${createdPost.slug}`);
+  } catch (error) {
+    alertOnFailure(() => `Failed to generate and save post: ${error}`);
+    throw error;
+  }
+}
+
+Path: D:\Modible\Software\pocketbase-sveltekit-starter\sk\src\lib\components\Alerts.svelte
+Contents:
+<script lang="ts" context="module">
+import { writable } from "svelte/store";
+
+interface Alert {
+  message: string;
+  type: string;
+  timeout?: number;
+  html?: boolean;
+}
+
+export const alerts = {
+  ...writable<Alert[]>([]),
+  add({ message, type = "info", timeout = 0, html = false }: Alert) {
+    const alert = { message, type, html };
+    this.update((v) => [...v, alert]);
+    if (timeout) {
+      setTimeout(() => {
+        dismiss(alert);
+      }, timeout);
+    }
+  },
+  info(message: string, timeout = 0) {
+    this.add({ message, type: "info", timeout });
+  },
+  success(message: string, timeout = 0) {
+    this.add({ message, type: "success", timeout });
+  },
+  warning(message: string, timeout = 0) {
+    this.add({ message, type: "warning", timeout });
+  },
+  error(message: string, timeout = 0) {
+    this.add({ message, type: "error", timeout });
+  },
+};
+
+export function errorAlert(message: string) {
+  const type = "error";
+}
+
+function dismiss(alert: Alert) {
+  alerts.update((val) => val.filter((a) => a !== alert));
+}
+
+function dismissAll() {
+  alerts.set([]);
+}
+</script>
+
+<svelte:window
+  on:unhandledrejection={(e) => alerts.error(e.reason.toString())}
+/>
+
+<article>
+  {#if $alerts.length > 1}
+    <button on:click={dismissAll} class="tight">Dismiss All</button>
+  {/if}
+  {#each $alerts as alert}
+    <blockquote class={alert.type}>
+      <button on:click={() => dismiss(alert)} class="dismiss">&times;</button>
+      {#if alert.html}
+        {@html alert.message}
+      {:else}
+        {alert.message}
+      {/if}
+    </blockquote>
+  {/each}
+</article>
+
+<style>
+</style>
+
+
+Path: D:\Modible\Software\pocketbase-sveltekit-starter\sk\src\lib\components\DateShow.svelte
+Contents:
+<script lang="ts">
+export let date: string;
+let dt: Date,
+  // year: number,
+  // dom: number,
+  // dow: number,
+  // mon: number,
+  year: string,
+  dom: string,
+  dowName: string,
+  monName: string;
+const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+$: {
+  dt = new Date(date);
+  // year = dt.getFullYear();
+  // dom = dt.getDate();
+  // dow = dt.getDay();
+  // mon = dt.getMonth();
+  [dowName, monName, dom, year] = dt.toDateString().split(" ");
+}
+</script>
+
+<div class="date" title={dt.toLocaleString()}>
+  <div class="dow">{dowName}</div>
+  <div>
+    <div class="mon">{monName}</div>
+    <div class="dom">{dom}</div>
+  </div>
+  <div class="year">{year}</div>
+</div>
+
+<style lang="scss">
+.date {
+  display: inline-flex;
+  background-color: var(--border);
+  border-radius: 50%;
+  height: 5em;
+  aspect-ratio: 1;
+  padding: 0.5em;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  font-family: var(--font-alt);
+  > div {
+    display: flex;
+    flex-direction: row;
+    gap: 0.25em;
+    > * {
+      font-weight: bold;
+    }
+  }
+}
+</style>
+
+
+Path: D:\Modible\Software\pocketbase-sveltekit-starter\sk\src\lib\components\Delete.svelte
+Contents:
+<script lang="ts">
+  import { onMount } from 'svelte';
+  import { goto } from "$app/navigation";
+  import { client } from "$lib/pocketbase";
+  import { alertOnFailure } from "$lib/pocketbase/ui";
+  import Image from "./Image.svelte"; // Make sure the path is correct
+  import type { PostsResponse } from "$lib/pocketbase/generated-types";
+
+  export let id: string;
+  export let table: string;
+
+  let post: PostsResponse | null = null;
+
+  async function loadPost() {
+    try {
+      const fetchedPost = await client.collection(table).getOne(id);
+      post = fetchedPost as unknown as PostsResponse;
+    } catch (error) {
+      console.error("Failed to load post", error);
+      alert("Failed to load post details.");
+    }
+  }
+
+  async function submit() {
+    alertOnFailure(async () => {
+      console.log(`Attempting to delete record with ID: ${id} from table: ${table}`);
+      await client.collection(table).delete(id);
+      goto("/remember");
+    });
+  }
+
+  onMount(() => {
+    loadPost();
+  });
+</script>
+
+<div class="flex justify-center items-center h-screen">
+  {#if post}
+    <form on:submit|preventDefault={submit} class="card flex-shrink-0 w-full max-w-sm shadow-2xl bg-base-100">
+      <div class="card-body">
+        <figure>
+          <Image {post} alt={post?.title || 'Post image'} className="w-full h-auto" />
+        </figure>
+        <h2 class="card-title">{post?.title}</h2>
+        <p>Are you sure you want to delete this post?</p>
+        <div class="card-actions justify-end">
+          <button type="button" class="btn btn-outline btn-accent" on:click={() => goto("/remember")}>No - Cancel</button>
+          <button type="submit" class="btn btn-primary">Yes - Proceed</button>
+        </div>
+      </div>
+    </form>
+  {:else}
+    <p>Loading post details...</p>
+  {/if}
+</div>
+
+
+Path: D:\Modible\Software\pocketbase-sveltekit-starter\sk\src\lib\components\Dialog.svelte
+Contents:
+<script lang="ts">
+  export let open: boolean;
+
+  function handleClose() {
+    open = false;
+  }
+</script>
+
+<dialog class="modal" {open} on:close={handleClose}>
+  <div class="modal-box">
+    <slot />    
+    <div class="modal-action">
+      <button class="btn btn-primary" on:click={handleClose}>Close</button>
+    </div>
+  </div>
+</dialog>
+
+<style>
+  /* Add any necessary styles */
+</style>
+
+Path: D:\Modible\Software\pocketbase-sveltekit-starter\sk\src\lib\components\FileInput.svelte
+Contents:
+<script lang="ts">
+import { createEventDispatcher } from "svelte";
+
+export let files: FileList;
+export let accept = ".*";
+export let multiple = true;
+export let pasteFile = false;
+const dispatch = createEventDispatcher();
+function paste(e: ClipboardEvent) {
+  if (pasteFile && e.clipboardData?.files) {
+    files = e.clipboardData.files;
+    dispatch("change", files);
+  }
+}
+</script>
+
+<svelte:body on:paste={paste} />
+
+<label class="file">
+  <div><slot>Drag/drop files here.</slot></div>
+  <input
+    type="file"
+    multiple={multiple}
+    bind:files={files}
+    on:change={(e) => dispatch("change", files)}
+    accept={accept}
+  />
+</label>
+
+<style lang="scss">
+label.file {
+  cursor: pointer;
+  border: dashed 2px gray;
+  padding: 1em;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  input[type="file"] {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    opacity: 0;
+    padding: 0;
+    margin: 0;
+    cursor: pointer;
+  }
+}
+</style>
+
+
+Path: D:\Modible\Software\pocketbase-sveltekit-starter\sk\src\lib\components\Footer.svelte
+Contents:
+<!-- Footer -->
+<footer class="footer footer-center bg-base-300 text-base-content py-8">
+    <div>
+      <p class="font-bold">mind.ai</p>
+      <p>Cultivating Brilliant Ideas Since 2009</p>
+      <p>modible - 2024 - All right reserved</p>
+    </div>
+    <div>
+      <div class="grid grid-flow-col gap-4">
+        <a href="/"
+          ><svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            class="fill-current"
+            ><path
+              d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z"
+            ></path></svg
+          ></a
+        >
+        <a href="/"
+          ><svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            class="fill-current"
+            ><path
+              d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"
+            ></path></svg
+          ></a
+        >
+        <a href="/"
+          ><svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            class="fill-current"
+            ><path
+              d="M9 8h-3v4h3v12h5v-12h3.642l.358-4h-4v-1.667c0-.955.192-1.333 1.115-1.333h2.885v-5h-3.808c-3.596 0-5.192 1.583-5.192 4.615v3.385z"
+            ></path></svg
+          ></a
+        >
+      </div>
+    </div>
+  </footer>
+
+Path: D:\Modible\Software\pocketbase-sveltekit-starter\sk\src\lib\components\Image.svelte
+Contents:
+<script lang="ts">
+import { client } from "$lib/pocketbase";
+import type { PostsResponse } from "$lib/pocketbase/generated-types";
+
+export let post: PostsResponse;
+export let alt: string = "";
+export let className: string = "";
+</script>
+
+<!-- Image.svelte -->
+{#if post.expand?.featuredImage}
+  {@const imageRecord = post.expand.featuredImage}
+  {@const imageUrl = imageRecord && imageRecord.file ? client.getFileUrl(imageRecord, imageRecord.file) : ''}
+  <img src={imageUrl} alt={alt} class={className} />
+{:else}
+  <img
+    src="https://via.placeholder.com/800x400.png?text=No+Image"
+    alt={alt}
+    class={className}
+  />
+{/if}
+
+
+Path: D:\Modible\Software\pocketbase-sveltekit-starter\sk\src\lib\components\ImageWall.svelte
+Contents:
+<script lang="ts">
+    import { onMount } from "svelte";
+    import { client } from "$lib/pocketbase";
+    import type { ImagesResponse } from "$lib/pocketbase/generated-types";
+  
+    let images: ImagesResponse[] = [];
+    let imageWallList: string[] = [];
+  
+    onMount(async () => {
+      const result = await client.collection("images").getList(1, 50);
+      images = result.items as ImagesResponse[];
+      updateImageWallList(images);
+    });
+  
+    function updateImageWallList(images: ImagesResponse[]) {
+      imageWallList = images
+        .filter((image) => image.file)
+        .map((image) => client.files.getUrl(image, image.file!));
+    }
+  
+    $: updateImageWallList(images);
+  </script>
+  
+  <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+    {#each imageWallList as pic}
+      <img src={pic} alt="Background" class="w-full h-auto" />
+    {/each}
+  </div>
+
+Path: D:\Modible\Software\pocketbase-sveltekit-starter\sk\src\lib\components\InterpretationList.svelte
+Contents:
+<script lang="ts">
+  import { createEventDispatcher } from "svelte";
+  import { scale } from 'svelte/transition';
+
+  export let interpretations: { title: string; text: string; imageUrl: string }[];
+
+  const dispatch = createEventDispatcher();
+
+  function selectInterpretation(interpretation: { title: string; text: string; imageUrl: string }) {
+    dispatch("select", { interpretation });
+  }
+
+  function goBack() {
+    dispatch("back");
+  }
+</script>
+
+<style>
+  .interpretation:hover {
+    transform: translateY(-5px);
+    transition: transform 0.3s ease;
+  }
+</style>
+
+<div class="container mx-auto p-4">
+  <div class="mb-6">
+    <h2 class="text-2xl font-semibold mb-4 text-center">Select an interpretation:</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {#each interpretations as interpretation (interpretation.title)}
+        <button class="max-w-sm rounded overflow-hidden shadow-lg cursor-pointer interpretation bg-primary text-primary-content hover:bg-secondary transition duration-300 ease-in-out transform hover:-translate-y-1 hover:scale-105" 
+                on:click={() => selectInterpretation(interpretation)} 
+                in:scale={{ duration: 300 }}>
+          <img class="w-full" src={interpretation.imageUrl} alt={`Image for ${interpretation.title}`} in:scale={{ duration: 300 }}>
+          <div class="px-6 py-4">
+            <div class="font-bold text-xl mb-2 text-primary-content">{interpretation.title}</div>
+            <p class="text-primary-content ">
+              {interpretation.text}
+            </p>
+          </div>
+        </button>
+      {/each}
+    </div>
+  </div>
+  <button class="btn btn-primary" on:click={goBack}>Back</button>
+</div>
+
+
+Path: D:\Modible\Software\pocketbase-sveltekit-starter\sk\src\lib\components\LoadingIndicator.svelte
+Contents:
+<script>
+  // A reactive variable to hold the message
+  export let message = "Loading...";
+</script>
+
+<div class="flex flex-col items-center justify-center h-72 min-h-[calc(100vh-200px)]">
+  <div class="text-center">
+    <svg class="h-8 w-8 animate-spin text-gray-800 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+    </svg>
+    <p class="text-lg font-medium mt-4">{message}</p>
+    <progress class="progress progress-primary w-56 mt-2" value="1" max="100"></progress>
+  </div>
+</div>
+
+
+Path: D:\Modible\Software\pocketbase-sveltekit-starter\sk\src\lib\components\LoginBadge.svelte
+Contents:
+<script lang="ts">
+import { onMount, onDestroy } from "svelte";
+import { authModel, client } from "../pocketbase";
+import Dialog from "./Dialog.svelte";
+import LoginForm from "./LoginForm.svelte";
+import { goto } from "$app/navigation";
+import { fly } from "svelte/transition";
+let isDialogOpen = false;
+let isDropdownOpen = false;
+async function logout() {
+  goto("/");
+  client.authStore.clear();
+  isDialogOpen = false;
+  isDropdownOpen = false;
+
+  // Ensure dropdown is closed on logout
+}
+
+function getFileUrl(authModel: { id: any; }, avatar: any) {
+  const baseUrl =
+    import.meta.env.VITE_APP_BASE_URL + "/api/files/_pb_users_auth_";
+  const userId = authModel.id;
+  const fileName = avatar;
+  const token = client.authStore.token;
+  return `${baseUrl}/${userId}/${fileName}?token=${token}`;
+}
+const unsubscribe = client.authStore.onChange((token, model) => {
+  // Handle auth state changes
+}, false);
+onDestroy(() => {
+  unsubscribe();
+});
+</script>
+
+<!-- Display user information and dropdown toggle -->
+{#if $authModel}
+  <div class="relative inline-block text-left">
+    <button
+      class="dropdown"
+      on:click={() => (isDropdownOpen = !isDropdownOpen)}
+      aria-haspopup="true"
+      aria-expanded={isDropdownOpen}
+    >
+      <div tabindex="0" role="button" class="btn">
+        {$authModel?.name || $authModel?.username || 'User'}
+        
+      </div>
+    </button>
+    {#if isDropdownOpen}
+      <ul
+        transition:fly={{ y: 10, duration: 200 }}
+        class="dropdown-content menu bg-base-200 rounded-box absolute right-0 z-[1] mt-2 w-52 p-2 shadow"
+      >
+        <li>
+          <button class="justify-between" on:click={() => (isDialogOpen = true)}
+            >Profile</button
+          >
+        </li>
+        <!-- Add more dropdown items here -->
+        <li>
+          <button class="flex" title="View profile">
+            <img alt="Profile" src="/avatar.png" class="w-8 rounded-full" />
+            <div class="flex flex-col">
+              <h3 class="font-bold">User name</h3>
+              <span class="text-accent text-xs">username@email.com</span>
+            </div>
+          </button>
+        </li>
+        <div class="divider my-0"></div>
+        <li><button>Settings</button></li>
+        <li><button>Keyboard shortcut</button></li>
+        <div class="divider my-0"></div>
+        <li><button>Company profile</button></li>
+        <li><button>Team</button></li>
+        <li><button>Invite Colleagues</button></li>
+        <div class="divider my-0"></div>
+        <li><button>Help</button></li>
+        <li><button on:click={logout}>Sign out</button></li>
+      </ul>
+    {/if}
+  </div>
+{:else}
+  <button class="btn btn-primary" on:click={() => (isDialogOpen = true)}
+    >Sign In</button
+  >
+{/if}
+<Dialog bind:open={isDialogOpen}>
+  {#if $authModel}
+    <!-- Logged in user's profile or logout option -->
+    <div transition:fly={{ y: -10, duration: 200 }}>
+      <button on:click={logout}>Sign Out</button>
+    </div>
+  {:else}
+    <!-- Login form for users who are not logged in -->
+    <div transition:fly={{ y: -10, duration: 200 }}><LoginForm /></div>
+  {/if}
+</Dialog>
+
+
+Path: D:\Modible\Software\pocketbase-sveltekit-starter\sk\src\lib\components\LoginForm.svelte
+Contents:
+<script lang="ts">
+export let authCollection = "users";
+export let passwordLogin = true;
+export let signup = true;
+import { client, providerLogin } from "../pocketbase";
+const coll = client.collection(authCollection);
+let email: string;
+let name: string;
+let password: string;
+let passwordConfirm: string;
+let create = false;
+let admin = false;
+let activeTab = signup ? "SignUp" : "SignIn";
+let errorMessage = "";
+let successMessage = "";
+async function submit() {
+  if (create) {
+    try {
+      await coll.create({ email, name, password, passwordConfirm });
+      successMessage = "User created successfully!";
+      errorMessage = "";
+    } catch (error) {
+      console.error("Error creating user:", error);
+      errorMessage = "Error creating user. Please try again.";
+      successMessage = "";
+    }
+  } else if (admin) {
+    try {
+      await client.admins.authWithPassword(email, password);
+      successMessage = "Admin authenticated successfully!";
+      errorMessage = "";
+    } catch (error) {
+      console.error("Admin authentication error:", error);
+      errorMessage =
+        "Admin authentication failed. Please check your credentials.";
+      successMessage = "";
+    }
+  } else {
+    try {
+      await coll.authWithPassword(email, password);
+      successMessage = "User authenticated successfully!";
+      errorMessage = "";
+    } catch (error) {
+      console.error("User authentication error:", error);
+      errorMessage =
+        "User authentication failed. Please check your credentials.";
+      successMessage = "";
+    }
+  }
+}
+</script>
+
+<form
+  on:submit|preventDefault={submit}
+  class="rounded-box bg-base-200 flex max-w-md flex-col gap-4 p-6"
+>
+  {#if passwordLogin}
+    <h1 class="self-center text-3xl font-bold">
+      {activeTab === 'SignIn' ? 'Log in' : 'Create an account'}
+    </h1>
+
+    <div class="tabs self-center">
+      <button
+        class="tab tab-bordered {activeTab === 'SignIn' ? 'tab-active' : ''}"
+        on:click={() => (activeTab = 'SignIn', signup = false)}
+        on:keydown={(event) => {
+          if (event.key === 'Enter') {
+            activeTab = 'SignIn';
+            signup = false;
+          }
+        }}
+        aria-label="Log in"
+        type="button"
+      >
+        Log in
+      </button>
+      <button
+        class="tab tab-bordered {activeTab === 'SignUp' ? 'tab-active' : ''}"
+        on:click={() => (activeTab = 'SignUp', signup = true)}
+        on:keydown={(event) => {
+          if (event.key === 'Enter') {
+            activeTab = 'SignUp';
+            signup = true;
+          }
+        }}
+        aria-label="Sign up"
+      >
+        Sign up
+      </button>
+    </div>
+
+    {#await coll.listAuthMethods({ $autoCancel: false }) then methods}
+      <div class="space-y-2">
+        {#each methods.authProviders as p}
+          <button
+            class="btn btn-neutral w-full"
+            type="button"
+            on:click={() => providerLogin(p, coll)}
+          >
+            <i class="fa-brands fa-google text-primary mr-2"></i>
+            {activeTab === 'SignIn' ? 'Log in' : 'Sign up'} with {p.name}
+          </button>
+        {/each}
+      </div>
+    {:catch}
+      <!-- pocketbase not working -->
+    {/await}
+
+    <div class="divider">OR</div>
+
+    {#if activeTab === 'SignIn'}
+      <label class="form-control">
+        <div class="label">
+          <span class="label-text">Email</span>
+        </div>
+        <input
+          class="input input-bordered"
+          bind:value={email}
+          required
+          type="email"
+          placeholder="email"
+          id="email-input"
+          autocomplete="email"
+        />
+      </label>
+
+      <label class="form-control">
+        <div class="label">
+          <span class="label-text">Password</span>
+        </div>
+        <input
+          class="input input-bordered"
+          bind:value={password}
+          required
+          type="password"
+          placeholder="password"
+          id="password-input"
+          autocomplete="current-password"
+        />
+      </label>
+
+      <div class="form-control">
+        <label class="label cursor-pointer gap-2 self-start">
+          <input type="checkbox" class="checkbox" bind:checked={admin} />
+          <span class="label-text">Admin</span>
+        </label>
+      </div>
+
+      <button
+        class="btn btn-primary"
+        type="submit"
+        on:click={() => (create = false)}
+      >
+        Log in
+      </button>
+    {:else if activeTab === 'SignUp'}
+      <label class="form-control">
+        <div class="label">
+          <span class="label-text">Email</span>
+        </div>
+        <input
+          class="input input-bordered"
+          bind:value={email}
+          required
+          type="text"
+          placeholder="email"
+        />
+      </label>
+
+      <label class="form-control">
+        <div class="label">
+          <span class="label-text">Password</span>
+        </div>
+        <input
+          class="input input-bordered"
+          bind:value={password}
+          required
+          type="password"
+          placeholder="password"
+        />
+      </label>
+
+      <label class="form-control">
+        <div class="label">
+          <span class="label-text">Confirm password</span>
+        </div>
+        <input
+          class="input input-bordered"
+          bind:value={passwordConfirm}
+          required
+          type="password"
+          placeholder="confirm password"
+        />
+      </label>
+
+      <label class="form-control">
+        <div class="label">
+          <span class="label-text">Name / Label</span>
+        </div>
+        <input
+          class="input input-bordered"
+          bind:value={name}
+          required
+          type="text"
+          placeholder="name / label"
+        />
+      </label>
+
+      <input type="hidden" name="register" value={true} />
+
+      <button
+        class="btn btn-primary"
+        type="submit"
+        on:click={() => (create = true)}
+      >
+        Sign up
+      </button>
+    {/if}
+
+    {#if errorMessage}
+      <div class="alert alert-error">
+        <div class="flex-1">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            class="mx-2 h-6 w-6 stroke-current"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"
+            ></path>
+          </svg>
+          <label for="errorMessageInput">{errorMessage}</label>
+        </div>
+      </div>
+    {/if}
+
+    {#if successMessage}
+      <div class="alert alert-success">
+        <div class="flex-1">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            class="mx-2 h-6 w-6 stroke-current"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
+            ></path>
+          </svg>
+          <label for="successMessageInput">{successMessage}</label>
+        </div>
+      </div>
+    {/if}
+  {/if}
+</form>
+
+
+Path: D:\Modible\Software\pocketbase-sveltekit-starter\sk\src\lib\components\LoginGuard.svelte
+Contents:
+<script lang="ts">
+import { goto } from "$app/navigation";
+import { Admin } from "pocketbase";
+import { authModel } from "../pocketbase";
+import LoginForm from "./LoginForm.svelte";
+export let admin: boolean | undefined = undefined;
+export let slotLogin = false;
+export let destination: string | null = null;
+$: if (destination != null && $authModel) {
+  goto(destination);
+}
+$: authorized =
+  $authModel && //  must be logged in
+  (admin === undefined || // admin or not, doesn't matter
+    (admin === true && $authModel instanceof Admin) || // must be admin
+    (admin === false && !($authModel instanceof Admin))); // must not be admin
+</script>
+
+{#if authorized}
+  <slot />
+{:else if slotLogin || $$slots["login"]}
+  <slot name="login">
+    <LoginForm />
+  </slot>
+{/if}
+
+
+Path: D:\Modible\Software\pocketbase-sveltekit-starter\sk\src\lib\components\Nav.svelte
+Contents:
+<script lang="ts">
+import { base } from "$app/paths";
+import { page } from "$app/stores";
+import LoginBadge from "$lib/components/LoginBadge.svelte";
+import { authModel } from "$lib/pocketbase";
+import ThemeSwitch from "$lib/components/ThemeSwitch.svelte";
+import { fly } from "svelte/transition";
+let isOpen = false;
+const appLinks = [
+  ["/create/", "Create"],
+  ["/remember/", "Remember"],
+  //,
+  ["/inspire/", "Inspire"],
+  //["/explore/", "Explore"],
+  //["/reflect/", "Reflect"],
+];
+const landingLinks = [
+  ["/#features", "Features"],
+  ["/#how-it-works", "How It Works"],
+  ["/#pricing", "Pricing"],
+  ["/#testimonials", "Testimonials"],
+  ["/#contact", "Contact"],
+];
+function toggleMenu() {
+  isOpen = !isOpen;
+}
+function closeMenu() {
+  isOpen = false;
+}
+</script>
+
+<nav>
+  <div class="navbar">
+    <div class="navbar-start">
+      <div
+        class="dropdown"
+        on:mouseleave={closeMenu}
+        role="button"
+        aria-haspopup="true"
+        aria-expanded={isOpen}
+        tabindex={0}
+      >
+        <button
+          class="btn btn-ghost lg:hidden"
+          on:click={toggleMenu}
+          tabindex="0"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-5 w-5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 6h16M4 12h8m-8 6h16"
+            />
+          </svg>
+        </button>
+        {#if isOpen}
+          <ul
+            transition:fly={{ y: -10, duration: 200 }}
+            class="menu menu-compact dropdown-content rounded-box bg-base-300 z-20 mt-3 w-52 p-2 shadow"
+          >
+            {#if $authModel}
+              {#each appLinks as [path, label]}
+                <li>
+                  <a
+                    href={`${base}${path}`}
+                    class:active={$page.url.pathname === path}
+                    on:click={closeMenu}>{label}</a
+                  >
+                </li>
+              {/each}
+            {:else}
+              {#each landingLinks as [path, label]}
+                <li><a href={path} on:click={closeMenu}>{label}</a></li>
+              {/each}
+            {/if}
+            <ThemeSwitch />
+          </ul>
+        {/if}
+      </div>
+      <a href="/" class="btn btn-ghost text-xl normal-case">mind.ai</a>
+    </div>
+    <div class="navbar-center hidden lg:flex">
+      <ul class="menu menu-horizontal p-0">
+        {#if $authModel}
+          {#each appLinks as [path, label]}
+            <li class="p-4">
+              <a
+                href={`${base}${path}`}
+                class:active={$page.url.pathname === path}>{label}</a
+              >
+            </li>
+          {/each}
+          <li class="p-4">
+            <ThemeSwitch />
+          </li>
+        {:else}
+          {#each landingLinks as [path, label]}
+            <li class="p-4"><a href={path}>{label}</a></li>
+          {/each}
+        {/if}
+      </ul>
+    </div>
+    <div class="navbar-end"><LoginBadge /></div>
+  </div>
+</nav>
+
+
+Path: D:\Modible\Software\pocketbase-sveltekit-starter\sk\src\lib\components\PostCard.svelte
+Contents:
+<script lang="ts">
+import type { PostsResponse } from "$lib/pocketbase/generated-types";
+import Markdown from "svelte-markdown";
+import TagGroup from "$lib/components/TagGroup.svelte";
+import Delete from "./Delete.svelte";
+import { client } from "$lib/pocketbase";
+export let post: PostsResponse;
+</script>
+
+<div
+  class="card bg-base-100 border-secondary border-3 m-2 flex flex-1 flex-col justify-between border shadow-xl"
+>
+  <div>
+    <figure>
+      <!-- PostCard.svelte -->
+      {#if post.expand?.featuredImage}
+        {@const imageRecord = post.expand.featuredImage}
+        {@const imageUrl = imageRecord && imageRecord.file ? client.getFileUrl(imageRecord, imageRecord.file) : ''}
+        <img
+          src={imageUrl}
+          alt={post.title}
+          class="aspect-[16/9] w-full rounded-t-lg object-cover sm:aspect-[2/1] lg:aspect-[3/2]"
+        />
+      {:else}
+        <img
+          src="https://via.placeholder.com/800x400.png?text=AI+Blog"
+          alt="Placeholder"
+          class="aspect-[16/9] w-full rounded-t-lg object-cover sm:aspect-[2/1] lg:aspect-[3/2]"
+        />
+      {/if}
+    </figure>
+    <div class="">
+      <div class="prose items-center p-2">
+        <time datetime={post.updated} class="text-accent">
+          {new Date(post.updated).toLocaleDateString()}
+        </time>
+      </div>
+      <div class="group relative px-2">
+        <a
+          href={`/posts/${post.slug}`}
+          class="prose-lg text-primary hover:text-secondary font-bold"
+        >
+          {post.title}
+        </a>
+        <div class="prose-sm text-base-content mt-3 line-clamp-6 text-justify">
+          <Markdown source={post.blogSummary} />
+        </div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <div class="p-2">
+      <TagGroup post={post} />
+      <div class="card-actions mt-4 justify-between">
+        <a class="btn btn-outline" href={`/posts/${post.slug}/edit`}>Edit</a>
+        <a class="btn btn-outline" href={`/posts/${post.slug}/inspire`}
+          >Inspire</a
+        >
+        <a
+          class="btn btn-outline btn-secondary"
+          href={`/posts/${post.slug}#delete`}>Delete</a
+        >
+      </div>
+    </div>
+  </div>
+</div>
+
+
+Path: D:\Modible\Software\pocketbase-sveltekit-starter\sk\src\lib\components\PostContent.svelte
+Contents:
+<script lang="ts">
+    import { marked } from "marked";
+  
+    export let content: string;
+  </script>
+  
+  <div class="mt-4">
+    {@html marked(content || "")}
+  </div>
+
+Path: D:\Modible\Software\pocketbase-sveltekit-starter\sk\src\lib\components\PostList.svelte
+Contents:
+<script lang="ts">
+import type { PostsResponse } from "$lib/pocketbase/generated-types";
+import PostCard from "$lib/components/PostCard.svelte";
+export let posts: PostsResponse[] = [];
+</script>
+
+{#if Array.isArray(posts)}
+  {#each posts as post (post.id)}
+    <PostCard post={post} />
+  {/each}
+{:else}
+  <p>Error: Posts data is not available.</p>
+{/if}
+
+
+Path: D:\Modible\Software\pocketbase-sveltekit-starter\sk\src\lib\components\ServiceForm.svelte
+Contents:
+<script lang="ts">
+    import { createEventDispatcher } from 'svelte';
+  
+    const dispatch = createEventDispatcher();
+    let selectedService = '';
+    let selectedModel = '';
+    let inputText = '';
+  
+    const services = [
+      {
+        name: "Anthropic",
+        models: [
+          "claude-3-haiku-20240307",
+          "claude-3-sonnet-20240229",
+          "claude-3-opus-20240229",
+          "claude-2.1",
+          "claude-2.0",
+          "claude-instant-1.2",
+        ],
+      },
+      {
+        name: "OpenAI",
+        models: ["gpt-4-turbo-preview", "gpt-3.5-turbo"],
+      },
+    ];
+  
+    async function callAPI() {
+      // Emit an event with the selected service, model, and input text
+      dispatch('submit', { selectedService, selectedModel, inputText });
+    }
+  </script>
+  
+  <div>
+    <select bind:value={selectedService}>
+      <option value="">Select a service</option>
+      {#each services as service}
+        <option value={service.name}>{service.name}</option>
+      {/each}
+    </select>
+  
+    {#if selectedService}
+      <select bind:value={selectedModel}>
+        <option value="">Select a model</option>
+        {#each services.find(s => s.name === selectedService)?.models ?? [] as model}
+          <option value={model}>{model}</option>
+        {/each}
+      </select>
+    {/if}
+  
+    <input type="text" bind:value={inputText} placeholder="Enter text" />
+    <button on:click={callAPI} disabled={!selectedService || !selectedModel}>
+      Submit
+    </button>
+  </div>
+
+Path: D:\Modible\Software\pocketbase-sveltekit-starter\sk\src\lib\components\ServiceSelector.svelte
+Contents:
+<script lang="ts">
+  import { createEventDispatcher, onMount } from "svelte";
+  import { availableServices } from "$lib/utils/api";
+
+  export let selectedService: string = availableServices[0]?.name ?? '';
+  export let selectedModel: string = availableServices[0]?.models[0] ?? '';
+
+  const dispatch = createEventDispatcher();
+
+  // Set default values on mount if not provided
+  onMount(() => {
+    if (!selectedService) {
+      selectedService = availableServices[0].name;
+      dispatch("serviceChange", selectedService);
+    }
+    if (!selectedModel) {
+      selectedModel = availableServices.find(s => s.name === selectedService)?.models[0] ?? '';
+      dispatch("modelChange", selectedModel);
+    }
+  });
+
+  function handleServiceChange() {
+    dispatch("serviceChange", selectedService);
+    selectedModel = availableServices.find(s => s.name === selectedService)?.models[0] ?? '';
+    dispatch("modelChange", selectedModel);
+  }
+
+  function handleModelChange() {
+    dispatch("modelChange", selectedModel);
+  }
+</script>
+
+<div class="flex bg-primary items-center text-primary-content">
+  <select class="select select-ghost w-full max-w-xs" bind:value={selectedService} on:change={handleServiceChange}>
+    {#each availableServices as service}
+      <option value={service.name}>{service.name}</option>
+    {/each}
+  </select>
+  {#if selectedService}
+    <select class="select select-ghost w-full max-w-xs" bind:value={selectedModel} on:change={handleModelChange}>
+      {#each availableServices.find(s => s.name === selectedService)?.models ?? [] as model}
+        <option value={model}>{model}</option>
+      {/each}
+    </select>
+  {/if}
+</div>
+
+Path: D:\Modible\Software\pocketbase-sveltekit-starter\sk\src\lib\components\Spinner.svelte
+Contents:
+<script lang="ts" context="module">
+import { writable } from "svelte/store";
+
+// returns a store that:
+// starts out false
+// becomes true when the async function f starts running
+// becomes false when f resolves (or rejects)
+export function activityStore<T>(f: (t: T) => Promise<any>) {
+  const store = writable(false);
+  async function run(data: T) {
+    try {
+      store.set(true);
+      return await f(data);
+    } finally {
+      store.set(false);
+    }
+  }
+  return { ...store, run };
+}
+</script>
+
+<script lang="ts">
+export let active = false;
+</script>
+
+<span class="loader" class:active={active} />
+
+<style lang="scss">
+.loader {
+  width: 1em;
+  height: 1em;
+  border: 0.2em solid var(--links);
+  border-radius: 50%;
+  display: inline-block;
+  box-sizing: border-box;
+  &.active {
+    border-bottom-color: transparent; // 3/4 border solid, 1/4 transparent
+    animation: rotation 1s linear infinite;
+  }
+}
+
+@keyframes rotation {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+</style>
+
+
+Path: D:\Modible\Software\pocketbase-sveltekit-starter\sk\src\lib\components\Tab.svelte
+Contents:
+<script lang="ts">
+export let key: string | number;
+import { getContext } from "svelte";
+import type { Writable } from "svelte/store";
+const store: Writable<string | number> = getContext("activeTab");
+</script>
+
+<button
+  type="button"
+  class="title"
+  on:click={() => ($store = key)}
+  class:active={$store === key}
+>
+  <slot />
+</button>
+
+<style>
+</style>
+
+
+Path: D:\Modible\Software\pocketbase-sveltekit-starter\sk\src\lib\components\TabContent.svelte
+Contents:
+<script lang="ts">
+export let key: string | number;
+import { getContext } from "svelte";
+import type { Writable } from "svelte/store";
+const store: Writable<string | number> = getContext("activeTab");
+</script>
+
+{#if $store === key}
+  <slot />
+{/if}
+
+
+Path: D:\Modible\Software\pocketbase-sveltekit-starter\sk\src\lib\components\TabGroup.svelte
+Contents:
+<script lang="ts">
+export let active: string | number = 0;
+import { writable } from "svelte/store";
+import type { Writable } from "svelte/store";
+import { setContext } from "svelte";
+const store: Writable<string | number> = writable(active);
+  
+setContext("activeTab", store);
+
+</script>
+
+<div class="tabs">
+  <slot name="tabs" />
+</div>
+
+<div class="tab-content">
+  <slot />
+</div>
+
+<style>
+.tabs {
+  border-bottom: 2px solid var(--tab-color-active-bg, white);
+}
+.tab-content {
+  padding: 1em 0;
+}
+</style>
+
+
+Path: D:\Modible\Software\pocketbase-sveltekit-starter\sk\src\lib\components\TagEditor.svelte
+Contents:
+<script lang="ts">
+import TagGroup from "$lib/components/TagGroup.svelte";
+import type { PostsResponse } from "$lib/pocketbase/generated-types";
+import { client } from "$lib/pocketbase";
+import { onMount } from "svelte";
+
+export let post: PostsResponse;
+let tags: string[] = [];
+let tagInput: string = "";
+
+onMount(async () => {
+  await loadTags();
+  tagInput = tags.join(", ");
+});
+
+async function loadTags() {
+  if (post.expand?.tags) {
+    tags = post.expand.tags.map((tag: { title: any }) => tag.title);
+  } else {
+    const postsTagsResponse = await client
+      .collection("postsTags")
+      .getList(1, 50, {
+        filter: `posts = "${post.id}"`,
+      });
+    const tagIds = postsTagsResponse.items.map((postTag) => postTag.tags);
+    const loadedTags = await Promise.all(
+      tagIds.map((tagId) => client.collection("tags").getOne(tagId))
+    );
+    tags = loadedTags.map((tag) => tag.title);
+  }
+}
+
+$: {
+  if (post) {
+    loadTags();
+  }
+}
+
+function handleInput(event: Event) {
+  const input = (event.target as HTMLInputElement).value;
+  tagInput = input;
+  tags = input
+    .split(",")
+    .map((tag) => tag.trim())
+    .filter((tag) => tag);
+}
+
+$: {
+  if (post) {
+    loadTags();
+  }
+}
+</script>
+
+<div class="mt-4">
+  <input
+    type="text"
+    bind:value={tagInput}
+    on:input={handleInput}
+    class="input input-bordered w-full"
+    placeholder="Enter tags separated by commas"
+  />
+</div>
+
+<TagGroup post={post} tags={tags} />
+
+
+Path: D:\Modible\Software\pocketbase-sveltekit-starter\sk\src\lib\components\TagGroup.svelte
+Contents:
+<script lang="ts">
+import { fade, scale } from "svelte/transition";
+import type { PostsResponse } from "$lib/pocketbase/generated-types";
+export let post: PostsResponse;
+export let tags: string[] = [];
+$: {
+  if (post && post.tags) {
+    tags = post.tags;
+  }
+}
+</script>
+
+{#if tags.length > 0}
+  <div class="flex flex-wrap pb-2 pt-4" in:fade={{ duration: 400 }}>
+    {#each tags as tag, i (tag)}
+      {#if i < 2}
+        <a
+          href={`/tags/${tag}`}
+          class="tag bg-primary-content text-accent hover:bg-primary-focus mb-2 mr-2 inline-block cursor-pointer px-2 py-1 text-sm"
+          in:scale={{ delay: i * 100, duration: 500 }}
+          out:fade={{ duration: 300 }}
+        >
+          #{tag}
+        </a>
+      {/if}
+    {/each}
+  </div>
+{:else}
+  <div class="px-6 pb-2 pt-4 text-sm font-semibold" in:fade={{ duration: 400 }}>
+    No tags
+  </div>
+{/if}
+
+<style>
+.tag:hover {
+  transform: translateY(-5px);
+  transition: transform 0.3s ease;
+}
+</style>
+
+
+Path: D:\Modible\Software\pocketbase-sveltekit-starter\sk\src\lib\components\ThemeSwitch.svelte
+Contents:
+<script>
+import { onMount } from "svelte";
+import { themes } from "$lib/utils/themes";
+
+let currentTheme = "light";
+/**
+ * @type {HTMLDialogElement}
+ */
+let modal;
+
+/**
+ * @param {string} themeId
+ */
+function changeTheme(themeId) {
+  const theme = themes.find((t) => t.id === themeId);
+  if (theme) {
+    document.documentElement.setAttribute("data-theme", theme.id);
+    currentTheme = theme.id;
+    localStorage.setItem("theme", theme.id);
+    modal.close();
+  }
+}
+
+onMount(() => {
+  const savedTheme = localStorage.getItem("theme");
+  if (savedTheme && themes.some((t) => t.id === savedTheme)) {
+    changeTheme(savedTheme);
+  }
+});
+</script>
+
+<button
+  type="button"
+  on:click={() => modal.showModal()}
+  aria-label="Open Theme Modal">Theme</button
+>
+
+<dialog bind:this={modal} class="modal" id="modal">
+  <div class="modal-box w-11/12 max-w-5xl">
+    <h3 class="text-lg font-bold">Select a Theme</h3>
+    <div class="grid grid-cols-1 gap-4 py-4 md:grid-cols-2 lg:grid-cols-3">
+      {#each themes as theme (theme.id)}
+        <button
+          class="border-base-content/20 hover:border-base-content/40 cursor-pointer overflow-hidden rounded-lg border outline outline-2 outline-offset-2 outline-transparent"
+          data-set-theme={theme.id}
+          data-act-class="!outline-base-content"
+          on:click={() => changeTheme(theme.id)}
+        >
+          <div
+            data-theme={theme.id}
+            class="bg-base-100 text-base-content w-full font-sans"
+          >
+            <div class="grid grid-cols-5 grid-rows-3">
+              <div class="bg-base-200 col-start-1 row-span-2 row-start-1"></div>
+              <div class="bg-base-300 col-start-1 row-start-3"></div>
+              <div
+                class="bg-base-100 col-span-4 col-start-2 row-span-3 row-start-1 flex flex-col gap-1 p-2"
+              >
+                <div class="font-bold">{theme.name}</div>
+                <div class="flex flex-wrap gap-1">
+                  <div
+                    class="bg-primary flex aspect-square w-5 items-center justify-center rounded lg:w-6"
+                  >
+                    <div class="text-primary-content text-sm font-bold">A</div>
+                  </div>
+                  <div
+                    class="bg-secondary flex aspect-square w-5 items-center justify-center rounded lg:w-6"
+                  >
+                    <div class="text-secondary-content text-sm font-bold">
+                      A
+                    </div>
+                  </div>
+                  <div
+                    class="bg-accent flex aspect-square w-5 items-center justify-center rounded lg:w-6"
+                  >
+                    <div class="text-accent-content text-sm font-bold">A</div>
+                  </div>
+                  <div
+                    class="bg-neutral flex aspect-square w-5 items-center justify-center rounded lg:w-6"
+                  >
+                    <div class="text-neutral-content text-sm font-bold">A</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </button>
+      {/each}
+    </div>
+  </div>
+  <form method="dialog" class="modal-backdrop">
+    <button>Close</button>
+  </form>
+</dialog>
+
+
+Path: D:\Modible\Software\pocketbase-sveltekit-starter\sk\src\lib\components\TreeView.svelte
+Contents:
+<script>
+    import { onMount } from 'svelte';
+  
+    /**
+     * @type {any[]}
+     */
+    export let treeData = [];
+    /**
+     * @type {any[]}
+     */
+    let selectedNodes = [];
+  
+    onMount(async () => {
+      // Fetch the JSON data from a file or API
+      //const response = await fetch('path/to/your/data.json');
+      //treeData = await response.json();
+    });
+  
+    /**
+     * @param {any} node
+     */
+    function toggleNode(node) {
+      const index = selectedNodes.indexOf(node);
+      if (index > -1) {
+        selectedNodes.splice(index, 1);
+      } else {
+        selectedNodes.push(node);
+        selectChildren(node);
+      }
+      selectedNodes = [...selectedNodes];
+    }
+  
+    /**
+     * @param {{ children: any[]; }} node
+     */
+    function selectChildren(node) {
+      if (node.children) {
+        node.children.forEach((/** @type {any} */ child) => {
+          if (!selectedNodes.includes(child)) {
+            selectedNodes.push(child);
+            selectChildren(child);
+          }
+        });
+      }
+    }
+  </script>
+  
+  <ul class="pl-4">
+    {#each treeData as node}
+      <li class="mb-2">
+        <label class="flex items-center">
+          <input type="checkbox" class="checkbox checkbox-primary" on:change={() => toggleNode(node)} checked={selectedNodes.includes(node)}>
+          <span class="ml-2">{node.name}</span>
+        </label>
+        {#if node.children}
+          <svelte:self treeData={node.children} bind:selectedNodes />
+        {/if}
+      </li>
+    {/each}
+  </ul>
+
+Path: D:\Modible\Software\pocketbase-sveltekit-starter\sk\src\lib\pocketbase\generated-types.ts
+Contents:
+/**
+* This file was @generated using pocketbase-typegen
+*/
+
+export enum Collections {
+	Images = "images",
+	Posts = "posts",
+	Subpost = "subpost",
+	Tags = "tags",
+	Users = "users",
+}
+
+// Alias types for improved usability
+export type IsoDateString = string
+export type RecordIdString = string
+
+// System fields
+export type BaseSystemFields = {
+	id: RecordIdString
+	created: IsoDateString
+	updated: IsoDateString
+	collectionId: string
+	collectionName: Collections
+	expand?: { [key: string]: any }
+}
+
+export type AuthSystemFields = {
+	email: string
+	emailVisibility: boolean
+	username: string
+	verified: boolean
+} & BaseSystemFields
+
+// Record types for each collection
+
+export type ImagesRecord = {
+	file?: string
+}
+
+export type PostsRecord = {
+	title: string
+	slug: string
+	body: string
+	blogSummary?: string
+	featuredImage?: RecordIdString
+	prompt?: string
+	userid?: RecordIdString
+	tags?: RecordIdString[]
+}
+
+export type SubpostRecord = {
+	title: string
+	content: string
+	post: RecordIdString
+	slug: string
+}
+
+export type TagsRecord = {
+	title: string
+}
+
+export type UsersRecord = {
+	name?: string
+	avatar?: string
+}
+
+// Response types include system fields and match responses from the PocketBase API
+export type ImagesResponse = ImagesRecord & BaseSystemFields
+export type PostsResponse = PostsRecord & BaseSystemFields
+export type SubpostResponse = SubpostRecord & BaseSystemFields
+export type TagsResponse = TagsRecord & BaseSystemFields
+export type UsersResponse = UsersRecord & AuthSystemFields
+
+export type CollectionRecords = {
+	images: ImagesRecord
+	posts: PostsRecord
+	subpost: SubpostRecord
+	tags: TagsRecord
+	users: UsersRecord
+}
+
+Path: D:\Modible\Software\pocketbase-sveltekit-starter\sk\src\lib\pocketbase\ImgModal.svelte
+Contents:
+<script lang="ts">
+import type { Record } from "pocketbase";
+import { client } from ".";
+import Dialog from "$lib/components/Dialog.svelte";
+
+export let record: Record;
+export let filename: string;
+export let thumbOnly = false;
+</script>
+
+{#if record && filename}
+  {#await client.getFileUrl(record, filename, { thumb: "100x100" }) then src}
+    <Dialog>
+      <img src={src} alt="todo" slot="trigger" class="thumbnail" />
+      {#if !thumbOnly}
+        {#await client.getFileUrl(record, filename) then src}
+          <img src={src} alt="todo" />
+        {/await}
+      {/if}
+    </Dialog>
+  {/await}
+{/if}
+
+<style lang="scss">
+.thumbnail {
+  cursor: pointer;
+  border-radius: 5px;
+  box-shadow: //
+    0 0 5px 0px black;
+}
+</style>
+
+
+Path: D:\Modible\Software\pocketbase-sveltekit-starter\sk\src\lib\pocketbase\index.ts
+Contents:
+import PocketBase, {
+  ListResult,
+  Record as PBRecord,
+  type AuthProviderInfo,
+  RecordService,
+} from "pocketbase";
+import type { Admin } from "pocketbase";
+import { readable, type Readable, type Subscriber } from "svelte/store";
+import { browser } from "$app/environment";
+import { base } from "$app/paths";
+import { invalidateAll } from "$app/navigation";
+
+export const client = new PocketBase(
+  browser ? window.location.origin + "/" + base : undefined
+);
+
+export const authModel = readable<PBRecord | Admin | null>(
+  null,
+  function (set) {
+    client.authStore.onChange((token, model) => {
+      set(model);
+      invalidateAll(); // re-run load functions for current page
+    }, true);
+  }
+);
+
+export async function login(
+  email: string,
+  password: string,
+  register = false,
+  rest: { [key: string]: any } = {}
+) {
+  if (register) {
+    const user = { ...rest, email, password, confirmPassword: password };
+    await client.collection("users").create(user);
+  }
+  await client.collection("users").authWithPassword(email, password);
+}
+
+export function logout() {
+  client.authStore.clear();
+}
+
+/*
+ * Save (create/update) a record (a plain object). Automatically converts to
+ * FormData if needed.
+ */
+export async function save(collection: string, record: any, create = false) {
+  // convert obj to FormData in case one of the fields is instanceof FileList
+  const data = object2formdata(record);
+  if (record.id && !create) {
+    // "create" flag overrides update
+    return await client.collection(collection).update(record.id, data);
+  } else {
+    return await client.collection(collection).create(data);
+  }
+}
+
+export async function savePostWithTags(
+  collection: string,
+  record: any,
+  create = false
+) {
+  // Separate tags from the main record data
+  const { tags: tagsStr, ...postData } = record;
+  const tags = tagsStr
+    .split(",")
+    .map((tag: string) => tag.trim())
+    .filter((tag: any) => tag);
+
+  // Save the post data first
+  const postResult = await save(collection, postData, create);
+  const postId = create ? postResult.id : record.id; // Assuming the ID is returned for new records
+
+  // Now handle the tags
+  await processTags(tags, postId);
+
+  return postResult;
+}
+
+async function processTags(tags: string[], postId: string) {
+  for (const tagName of tags) {
+    let tagRecord = await findOrCreateTag(tagName);
+    await linkTagToPost(tagRecord.id, postId);
+  }
+}
+
+async function findOrCreateTag(tagName: string): Promise<PBRecord> {
+  // Implement the logic to find a tag by name or create it if it doesn't exist
+  // This is a placeholder function
+  return new PBRecord();
+}
+
+async function linkTagToPost(tagId: string, postId: string) {
+  // Implement the logic to create a record in the `taggings` collection linking the tag to the post
+  // This is a placeholder function
+}
+
+// convert obj to FormData in case one of the fields is instanceof FileList
+function object2formdata(obj: {}) {
+  // check if any field's value is an instanceof FileList
+  if (
+    !Object.values(obj).some(
+      (val) => val instanceof FileList || val instanceof File
+    )
+  ) {
+    // if not, just return the original object
+    return obj;
+  }
+  // otherwise, build FormData (multipart/form-data) from obj
+  const fd = new FormData();
+  for (const [key, val] of Object.entries(obj)) {
+    if (val instanceof FileList) {
+      for (const file of val) {
+        fd.append(key, file);
+      }
+    } else if (val instanceof File) {
+      // handle File before "object" so that it doesn't get serialized as JSON
+      fd.append(key, val);
+    } else if (Array.isArray(val)) {
+      // for some reason, multipart/form-data wants arrays to be comma-separated strings
+      fd.append(key, val.join(","));
+    } else if (typeof val === "object") {
+      fd.append(key, JSON.stringify(val));
+    } else {
+      fd.append(key, val as any);
+    }
+  }
+  return fd;
+}
+
+export interface PageStore<T = any> extends Readable<ListResult<T>> {
+  [x: string]: any;
+  setPage(newpage: number): Promise<void>;
+  next(): Promise<void>;
+  prev(): Promise<void>;
+}
+
+export function watch<T>(
+  idOrName: string,
+  queryParams = {} as any,
+  page = 1,
+  perPage = 20,
+  realtime = browser
+): PageStore<T> {
+  const collection = client.collection(idOrName);
+  let result = new ListResult(page, perPage, 0, 0, [] as T[]);
+  let set: Subscriber<ListResult<T>>;
+  const store = readable<ListResult<T>>(result, (_set) => {
+    set = _set;
+    // fetch first page
+    collection
+      .getList(page, perPage, queryParams)
+      .then((r) => set((result = r as ListResult<T>)));
+    // watch for changes (only if you're in the browser)
+    if (realtime)
+      collection.subscribe("*", ({ action, record }) => {
+        (async function (action: string) {
+          // see https://github.com/pocketbase/pocketbase/discussions/505
+          async function expand(expand: any, record: any) {
+            return expand
+              ? await collection.getOne(record.id, { expand })
+              : record;
+          }
+          switch (action) {
+            case "update":
+              record = await expand(queryParams.expand, record);
+              return result.items.map((item) =>
+                (item as { id: string }).id === record.id ? record : item
+              );
+            case "create":
+              record = await expand(queryParams.expand, record);
+              const index = result.items.findIndex((item: any) => item.id === record.id);
+              // replace existing if found, otherwise append
+              if (index >= 0) {
+                result.items[index] = record as T;
+              } else {
+                result.items.push(record as T);
+              }
+              // The 'else' block is not needed because the 'if' block above always returns
+              // Append the new record to the result items array
+              result.items.push(record as T);
+              break; // Use 'break' to exit the switch case after adding the item
+            case "delete":
+              // Filter out the deleted record from the result items array
+              result.items = result.items.filter((item) => (item as any).id !== record.id);
+              break; // Use 'break' to exit the switch case after filtering the item
+          }
+          return result.items;
+        })(action).then((items) =>
+          set((result = { ...result, items } as ListResult<T>))
+        );
+      });
+  });
+  async function setPage(newpage: number) {
+    const { page, totalPages, perPage } = result;
+    if (page > 0 && page <= totalPages) {
+      set((result = await collection.getList(newpage, perPage, queryParams)));
+    }
+  }
+  return {
+    ...store,
+    setPage,
+    async next() {
+      setPage(result.page + 1);
+    },
+    async prev() {
+      setPage(result.page - 1);
+    },
+  };
+}
+
+export async function providerLogin(
+  provider: AuthProviderInfo,
+  authCollection: RecordService
+) {
+  const authResponse = await authCollection.authWithOAuth2({
+    provider: provider.name,
+    createData: {
+      // emailVisibility: true,
+    },
+  });
+  // update user "record" if "meta" has info it doesn't have
+  const { meta, record } = authResponse;
+  let changes = {} as { [key: string]: any };
+  if (!record.name && meta?.name) {
+    changes.name = meta.name;
+  }
+  if (!record.avatar && meta?.avatarUrl) {
+    const response = await fetch(meta.avatarUrl);
+    if (response.ok) {
+      const type = response.headers.get("content-type") ?? "image/jpeg";
+      changes.avatar = new File([await response.blob()], "avatar", { type });
+    }
+  }
+  if (Object.keys(changes).length) {
+    authResponse.record = await save(authCollection.collectionIdOrName, {
+      ...record,
+      ...changes,
+    });
+  }
+  return authResponse;
+}
+
+
+Path: D:\Modible\Software\pocketbase-sveltekit-starter\sk\src\lib\pocketbase\Paginator.svelte
+Contents:
+<script lang="ts">
+import type { PageStore } from ".";
+
+export let store: PageStore;
+export let showIfSinglePage = false;
+</script>
+
+{#if showIfSinglePage || $store.totalPages > 1}
+  <div class="paginator">
+    <button
+      type="button"
+      on:click={() => store.prev()}
+      disabled={$store.page <= 1}>&laquo;</button
+    >
+    <div>page {$store.page} of {$store.totalPages}</div>
+    <button
+      type="button"
+      on:click={() => store.next()}
+      disabled={$store.page >= $store.totalPages}>&raquo;</button
+    >
+  </div>
+{/if}
+
+<style lang="scss">
+.paginator {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin: auto;
+}
+</style>
+
+
+Path: D:\Modible\Software\pocketbase-sveltekit-starter\sk\src\lib\pocketbase\pocketbase-types.ts
+Contents:
+/**
+ * This file was @generated using pocketbase-typegen
+ */
+
+export enum Collections {
+  Hooks = "hooks",
+  Posts = "posts",
+  Users = "users",
+}
+
+// Alias types for improved usability
+export type IsoDateString = string;
+export type RecordIdString = string;
+export type HTMLString = string;
+
+// System fields
+export type BaseSystemFields<T = never> = {
+  id: RecordIdString;
+  created: IsoDateString;
+  updated: IsoDateString;
+  collectionId: string;
+  collectionName: Collections;
+  expand?: T;
+};
+
+export type AuthSystemFields<T = never> = {
+  email: string;
+  emailVisibility: boolean;
+  username: string;
+  verified: boolean;
+} & BaseSystemFields<T>;
+
+// Record types for each collection
+
+export enum HooksEventOptions {
+  "insert" = "insert",
+  "update" = "update",
+  "delete" = "delete",
+}
+
+export enum HooksActionTypeOptions {
+  "command" = "command",
+  "post" = "post",
+}
+export type HooksRecord = {
+  collection: string;
+  event: HooksEventOptions;
+  action_type: HooksActionTypeOptions;
+  action: string;
+  action_params?: string;
+  expands?: string;
+  disabled?: boolean;
+};
+
+export type PostsRecord = {
+  title: string;
+  featuredImage?: string;
+  body: string;
+  slug: string;
+  files?: string[];
+  tags?: string;
+  userid?: RecordIdString;
+  prompt?: string;
+  blogSummary?: string;
+};
+
+export type UsersRecord = {
+  name?: string;
+  avatar?: string;
+};
+
+// Response types include system fields and match responses from the PocketBase API
+export type HooksResponse = HooksRecord & BaseSystemFields;
+export type PostsResponse = PostsRecord & BaseSystemFields;
+export type UsersResponse = UsersRecord & AuthSystemFields;
+
+// Types containing all Records and Responses, useful for creating typing helper functions
+
+export type CollectionRecords = {
+  hooks: HooksRecord;
+  posts: PostsRecord;
+  users: UsersRecord;
+};
+
+export type CollectionResponses = {
+  hooks: HooksResponse;
+  posts: PostsResponse;
+  users: UsersResponse;
+};
+
+
+Path: D:\Modible\Software\pocketbase-sveltekit-starter\sk\src\lib\pocketbase\ui.ts
+Contents:
+import { alerts } from "$lib/components/Alerts.svelte";
+
+// wrapper to execute a pocketbase client request and generate alerts on failure
+export async function alertOnFailure(request: () => void) {
+  try {
+    await request();
+  } catch (e: any) {
+    const {
+      message,
+      data: { data = {} },
+    } = e;
+    if (message) alerts.error(message);
+    for (const key in data) {
+      const { message } = data[key];
+      if (message) alerts.error(`${key}: ${message}`);
+    }
+  }
+}
+
+
+Path: D:\Modible\Software\pocketbase-sveltekit-starter\sk\src\lib\services\generateBlog.ts
+Contents:
+import { goto } from "$app/navigation";
+import { authModel, client, save } from "$lib/pocketbase";
+import { metadata } from "$lib/app/stores";
+import type {
+  PostsResponse,
+  SubpostRecord,
+} from "$lib/pocketbase/generated-types";
+import { ensureTagsExist, generateImageFromDreamStudio } from "$lib/utils/api";
+import { alertOnFailure } from "$lib/pocketbase/ui";
+import {
+  promptFormat,
+  titlePrompt,
+  tagPrompt,
+  blogSummaryPrompt,
+  imagePrompt,
+  blogResponsePrompt,
+  tagTreePrompt,
+} from "$lib/utils/prompts";
+import { serviceModelSelectionStore } from "$lib/app/stores";
+import { get } from "svelte/store";
+import { availableServices } from "$lib/utils/api";
+import { createPost } from "$lib/services/postService";
+
+// Define the structure of the post data
+interface PostData {
+  title: string;
+  slug: string;
+  body: string;
+  blogSummary: string;
+  featuredImage: string;
+  prompt: string;
+  userid: string;
+  tags: string[];
+}
+
+// Define the structure for the service and model selection
+export interface ServiceModelSelection {
+  selectedService: string;
+  selectedModel: string;
+}
+
+// Function to call the API
+async function callAPI(
+  selectedService: string,
+  selectedModel: string,
+  inputText: string
+): Promise<string> {
+  if (!selectedService || !selectedModel) {
+    console.log("Selected service: ", selectedService);
+    console.log("Selected model: ", selectedModel);
+
+    // Select the first service and first model as default
+    const defaultService = availableServices[0];
+    selectedService = defaultService.name;
+    selectedModel = defaultService.models[0];
+
+    console.log("Default service selected: ", selectedService);
+    console.log("Default model selected: ", selectedModel);
+  }
+
+
+  const response = await fetch(`/api/${selectedService.toLowerCase()}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text: inputText, model: selectedModel }),
+  });
+
+  if (!response.ok) {
+    throw new Error("Network response was not ok");
+  }
+
+  const data = await response.json();
+  return data.result;
+}
+
+// Main function to generate and save the blog post
+export async function generateBlog(
+  userInput: string,
+  engineId: string,
+  authModel: any
+): Promise<void> {
+  /* if (!authModel?.id) {
+    console.error("User is not logged in.");
+    alert("Please log in to save your post.");
+    return;
+  } */
+
+  let post: PostData = {
+    title: "",
+    slug: "",
+    body: "",
+    blogSummary: "",
+    featuredImage: "",
+    prompt: "",
+    userid: authModel.id,
+    tags: [],
+  };
+
+  try {
+    const { selectedService, selectedModel } = get(serviceModelSelectionStore);
+
+    // Generate content
+    post.body = await callAPI(
+      selectedService,
+      selectedModel,
+      `${promptFormat}'${userInput}'`
+    );
+    post.title = await callAPI(
+      selectedService,
+      selectedModel,
+      `${titlePrompt}'${post.body}'`
+    );
+    const tagString = await callAPI(
+      selectedService,
+      selectedModel,
+      `${tagPrompt}'${post.body}'`
+    );
+    post.blogSummary = await callAPI(
+      selectedService,
+      selectedModel,
+      `${blogSummaryPrompt}'${post.body}'`
+    );
+
+    // Generate slug
+    post.slug = post.title
+      .toLowerCase()
+      .replace(/\s+/g, "-")
+      .replace(/[^\w-]+/g, "")
+      .substring(0, 50);
+    post.prompt = userInput;
+
+    // Save tags
+    const tagsArray = tagString
+      .split(",")
+      .map((tag) => tag.trim())
+      .filter((tag) => tag);
+    const tagIds = await ensureTagsExist(tagsArray);
+    post.tags = tagIds;
+
+    // Generate image
+    const imageResponseText = await callAPI(
+      selectedService,
+      selectedModel,
+      `${imagePrompt}'${post.body}'`
+    );
+    
+    // Create the post using the createPost function from postsService
+    const createdPost = await createPost(post as Partial<PostsResponse>, imageResponseText, engineId);
+
+
+    if (createdPost !== undefined) {
+      // Redirect to the newly created post
+      goto(
+        `${import.meta.env.VITE_APP_SK_URL}posts/${
+          (createdPost as PostsResponse).slug
+        }`
+      );
+    } else {
+      throw new Error("Failed to create the post.");
+    }
+  } catch (error) {
+    alertOnFailure(() => `Failed to generate and save post: ${error}`);
+    throw error;
+  }
+}
+
+function isBase64Image(str: string) {
+  const base64ImagePattern =
+    /^data:image\/(?:png|jpeg|gif);base64,(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/;
+  return base64ImagePattern.test(str);
+}
+
+// Main function to generate and save the blog response (subpost)
+export async function generateBlogResponse(
+  userInput: string,
+  parentPostId: string,
+  authModel: any
+): Promise<void> {
+  /* if (!authModel?.id) {
+    console.error("User is not logged in.");
+    alert("Please log in to save your subpost.");
+    return;
+  } */
+
+  let subpost: SubpostRecord = {
+    title: "",
+    content: "",
+    post: parentPostId,
+    slug: "",
+  };
+
+  try {
+    const { selectedService, selectedModel } = get(serviceModelSelectionStore);
+
+    // Generate content and title concurrently
+    const [content, title] = await Promise.all([
+      callAPI(
+        selectedService,
+        selectedModel,
+        `${blogResponsePrompt} + "  " + '${userInput}'`
+      ),
+      callAPI(selectedService, selectedModel, `${titlePrompt}'${userInput}'`),
+    ]);
+    // Generate slug
+    subpost.slug = title
+      .toLowerCase()
+      .replace(/\s+/g, "-")
+      .replace(/[^\w-]+/g, "")
+      .substring(0, 50);
+
+    subpost.content = content;
+    subpost.title = title;
+    // Create the subpost
+    await save("subpost", subpost as SubpostRecord, true);
+
+    // Redirect to the parent post
+    const parentPost = await client.collection("posts").getOne(parentPostId);
+    goto(`${import.meta.env.VITE_APP_SK_URL}/posts/${parentPost.slug}`);
+  } catch (error) {
+    alertOnFailure(() => `Failed to generate and save subpost: ${error}`);
+    throw error;
+  }
+}
+
+export async function generateTagTree(
+  tags: string,
+  authModel: any
+): Promise<string> {
+  try {
+    let tempName = availableServices[1].name;
+    let tempMode = availableServices[1].models[1];
+
+    const {} = get(serviceModelSelectionStore);
+
+    // Generate content
+    const [rawTagTree] = await Promise.all([
+      await callAPI(tempName, tempMode, `${tagTreePrompt}'${tags}'`),
+    ]);
+
+    // Clean the generated tagTree
+    //const cleanedTagTree = cleanTagTree(rawTagTree);
+
+    // Parse the cleaned tagTree as JSON
+    //const parsedTagTree = JSON.parse(cleanedTagTree);
+    return rawTagTree;
+  } catch (error) {
+    alertOnFailure(() => `Failed to generate and save post: ${error}`);
+    throw error;
+  }
+}
+
+function cleanTagTree(rawTagTree: string): string {
+  // Remove intro and exit text
+  const cleanedTagTree = rawTagTree
+    .replace(/^[\s\S]*?{/, "{")
+    .replace(/}[\s\S]*?$/, "}");
+
+  // Validate and format the JSON
+  try {
+    console.log("cleanedTagTree: ", cleanedTagTree);
+    const parsedTagTree = JSON.parse(cleanedTagTree);
+    console.log("parsedTagTree: ", parsedTagTree);
+    const formattedTagTree = JSON.stringify(parsedTagTree, null, 2);
+    return formattedTagTree;
+  } catch (error: any) {
+    throw new Error(`Invalid JSON: ${error.message}`);
+  }
+}
+
+
+Path: D:\Modible\Software\pocketbase-sveltekit-starter\sk\src\lib\services\postService.ts
+Contents:
+// lib/services/postsService.ts
+import { client } from "$lib/pocketbase";
+import { writable } from "svelte/store";
+import type { PostsResponse } from "$lib/pocketbase/generated-types";
+
+async function populateFeaturedImage(
+  post: PostsResponse
+): Promise<string | undefined> {
+  if (post.expand?.featuredImage) {
+    const image = post.expand.featuredImage;
+    if (
+      "file" in image &&
+      "id" in image &&
+      "collectionId" in image &&
+      "collectionName" in image
+    ) {
+      try {
+        return client.getFileUrl(image, image.file);
+      } catch (error) {
+        console.error("Error getting featured image URL:", error);
+        return "https://via.placeholder.com/800x400.png?text=cool+wind"; // Set a default image URL
+      }
+    }
+  }
+  return undefined;
+}
+
+async function populateTags(post: PostsResponse): Promise<string[]> {
+  if (post.expand?.tags) {
+    return post.expand.tags.map((tag: { title: string }) => tag.title);
+  } else if (post.tags && post.tags.length > 0) {
+    const tagIds = post.tags.map((tagId) => `id = "${tagId}"`).join(" || ");
+    try {
+      const tags = await client
+        .collection("tags")
+        .getFullList(undefined, { filter: tagIds });
+      return tags.map((tag) => tag.title);
+    } catch (error) {
+      console.error("Error fetching tags:", error);
+      return []; // Return an empty array as a fallback
+    }
+  }
+  return [];
+}
+
+async function populatePostData(post: PostsResponse): Promise<PostsResponse> {
+  const featuredImage = await populateFeaturedImage(post);
+  const tags = await populateTags(post);
+  return { ...post, featuredImage, tags };
+}
+
+export async function fetchPosts(
+  page = 1,
+  perPage = 20
+): Promise<{
+  posts: PostsResponse[];
+  page: number;
+  perPage: number;
+  totalPages: number;
+} | null> {
+  try {
+    const postsResponse = await client
+      .collection("posts")
+      .getList<PostsResponse>(page, perPage, {
+        sort: "-updated",
+        expand: "featuredImage,tags",
+      });
+
+    const posts = await Promise.all(postsResponse.items.map(populatePostData));
+    const postsData = {
+      posts: posts,
+      page: postsResponse.page,
+      perPage: postsResponse.perPage,
+      totalPages: postsResponse.totalPages,
+    };
+    postsStore.set(postsData);
+    return postsData;
+  } catch (error) {
+    console.error("Error fetching posts:", error);
+    return null; // Return null to indicate an error occurred
+  }
+}
+
+export async function fetchPostBySlug(slug: string) {
+  try {
+    // Encode the slug to handle special characters
+    const encodedSlug = encodeURIComponent(slug);
+
+    const postsResponse = await client
+      .collection("posts")
+      .getFirstListItem<PostsResponse>(`slug = "${encodedSlug}"`, {
+        expand: "featuredImage,tags",
+      });
+
+    const post = await populatePostData(postsResponse);
+    return post;
+  } catch (error) {
+    console.error("Error fetching post:", error);
+    throw error;
+  }
+}
+
+// Refactored createPost function
+export async function createPost(
+  postData: Partial<PostsResponse>,
+  imagePrompt: string,
+  engineId: string
+): Promise<PostsResponse | null> {
+  try {
+    // Call the new createImage function
+    const imageRecordId = await createImage(imagePrompt, engineId);
+
+    // Set the featuredImage field to the image record ID
+    postData.featuredImage = imageRecordId;
+
+    // Create the post record
+    const createdPost = await client
+      .collection("posts")
+      .create<PostsResponse>(postData);
+    const populatedPost = await populatePostData(createdPost);
+    postsStore.update((store) => {
+      return {
+        ...store,
+        posts: [...store.posts, populatedPost],
+      };
+    });
+    return populatedPost;
+  } catch (error) {
+    console.error("Error creating post:", error);
+    return null;
+  }
+}
+
+async function createImage(imagePrompt: string, engineId: string) {
+  const imageResponse = await fetch("/api/dreamstudio", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt: imagePrompt }),
+  });
+
+  if (!imageResponse.ok) {
+    throw new Error("Failed to upload image");
+  }
+
+  const imageData = await imageResponse.json();
+  console.log("Image data:", imageData);
+  return imageData.id;
+}
+
+
+export async function updatePost(
+  postId: string,
+  postData: Partial<PostsResponse>
+): Promise<PostsResponse | null> {
+  try {
+    const updatedPost = await client
+      .collection("posts")
+      .update<PostsResponse>(postId, postData);
+    const populatedPost = await populatePostData(updatedPost);
+    postsStore.update((store) => {
+      const index = store.posts.findIndex((post) => post.id === postId);
+      if (index !== -1) {
+        const updatedPosts = [...store.posts];
+        updatedPosts[index] = populatedPost;
+        return { ...store, posts: updatedPosts };
+      }
+      return store;
+    });
+    return populatedPost;
+  } catch (error) {
+    console.error("Error updating post:", error);
+    return null; // Return null to indicate an error occurred
+  }
+}
+
+export async function deletePost(postId: string): Promise<boolean> {
+  try {
+    await client.collection("posts").delete(postId);
+    postsStore.update((store) => {
+      return {
+        ...store,
+        posts: store.posts.filter((post) => post.id !== postId),
+      };
+    });
+    return true; // Return true to indicate successful deletion
+  } catch (error) {
+    console.error("Error deleting post:", error);
+    return false; // Return false to indicate an error occurred
+  }
+}
+
+function createPostsStore() {
+  const { subscribe, set, update } = writable<{
+    posts: PostsResponse[];
+    page: number;
+    perPage: number;
+    totalPages: number;
+  }>({
+    posts: [],
+    page: 1,
+    perPage: 20,
+    totalPages: 1,
+  });
+
+  return {
+    subscribe,
+    set,
+    update,
+    appendPosts: (newPosts: PostsResponse[], totalPages: number) =>
+      update((store) => ({
+        ...store,
+        posts: [...store.posts, ...newPosts],
+        totalPages,
+      })),
+    reset: () => set({ posts: [], page: 1, perPage: 20, totalPages: 1 }),
+  };
+}
+
+const postsStore = createPostsStore();
+export { postsStore };
+
+
+Path: D:\Modible\Software\pocketbase-sveltekit-starter\sk\src\lib\stores\postStore.ts
+Contents:
+// lib/stores/postsStore.ts
+import { writable } from 'svelte/store';
+import type { PostsResponse } from '$lib/pocketbase/generated-types';
+
+export const postsStore = writable<PostsResponse[]>([]);
+
+Path: D:\Modible\Software\pocketbase-sveltekit-starter\sk\src\lib\utils\api.ts
+Contents:
+// src/lib/utils/api.ts
+// Improved error handling and abstraction of API URL and parameters
+import { env } from "$env/dynamic/public";
+import { client } from "$lib/pocketbase";
+
+const engineId = "stable-diffusion-v1-6";
+const apiHost = import.meta.env.VITE_STABILITY_API_HOST;
+
+const API_BASE_URL = import.meta.env.VITE_APP_BASE_URL;
+const CHATGPT_KEY = import.meta.env.VITE_CHATGPT_API_KEY;
+const SD_KEY = import.meta.env.VITE_STABILITY_API_KEY;
+const CLAUDE_KEY = import.meta.env.VITE_ANTHROPIC_API_KEY;
+const DALLE_KEY = import.meta.env.VITE_CHATGPT_API_KEY;
+
+// Validate that keys are present
+if (!API_BASE_URL) {
+  throw new Error("Missing APP_BASE_URL");
+}
+if (!CHATGPT_KEY) {
+  throw new Error("Missing CHATGPT_API_KEY");
+}
+if (!SD_KEY) {
+  throw new Error("Missing STABILITY_API_KEY");
+}
+if (!CLAUDE_KEY) {
+  throw new Error("Missing ANTHROPIC_API_KEY");
+}
+if (!DALLE_KEY) {
+  throw new Error("Missing DALLE_API_KEY");
+}
+
+export const availableServices = [
+  {
+    name: "Anthropic",
+    models: [
+      "claude-3-haiku-20240307",
+      "claude-3-sonnet-20240229",
+      "claude-3-opus-20240229",
+      "claude-2.1",
+      "claude-2.0",
+      "claude-instant-1.2",
+    ],
+  },
+  {
+    name: "OpenAI",
+    models: ["gpt-4-turbo-preview", "gpt-3.5-turbo"],
+  },
+];
+
+
+export async function apiRequest<T>(
+  endpoint: string,
+  method: "GET" | "POST" = "GET",
+  body: any = null
+): Promise<T> {
+  const headers = { "Content-Type": "application/json" };
+  const config: RequestInit = { method, headers };
+
+  if (body) {
+    config.body = JSON.stringify(body);
+  }
+
+  try {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
+    if (!response.ok) {
+      // Assuming the response includes a JSON body with an error message
+      const errorBody = await response.json();
+      throw new Error(
+        errorBody.message || `Request failed with status ${response.status}`
+      );
+    }
+    return await response.json();
+  } catch (error) {
+    // Log the error to an error reporting service if you have one
+    console.error("API Request failed:", error);
+    throw error;
+  }
+}
+
+export async function ensureTagsExist(tags: string[]): Promise<string[]> {
+  const existingTags = await client.collection("tags").getFullList({
+    filter: tags.map((tag) => `title = "${tag}"`).join(" || "),
+  });
+
+  const existingTagTitles = existingTags.map((tag) => tag.title);
+  const newTagTitles = tags.filter((tag) => !existingTagTitles.includes(tag));
+
+  console.log("New tags", newTagTitles);
+
+  client.autoCancellation(false);
+  // Create new tags with retries
+  const newTags = await Promise.all(
+    newTagTitles.map((title) => client.collection("tags").create({ title }))
+  );
+  client.autoCancellation(true);
+
+  console.log("Created new tags", newTags);
+
+  return [...existingTags, ...newTags].map((tag) => tag.id);
+}
+
+export async function getTagsForPost(slug: string): Promise<string> {
+  try {
+    console.log("Fetching tags for post", slug);
+    const postsResponse = await client
+      .collection("posts")
+      .getFirstListItem(`slug = "${slug}"`, {
+        expand: "tags",
+      });
+    if (!postsResponse) {
+      return "";
+    }
+
+    const tags =
+      postsResponse.expand?.tags?.map((tag: { title: any }) => tag.title) || [];
+    console.log("Tags for post", slug, tags);
+    return tags.join(", ");
+  } catch (error) {
+    console.error("Error fetching tags:", error);
+    return "";
+  }
+}
+
+export async function generateTextFromClaude(prompt: string): Promise<string> {
+  try {
+    console.log("Generating text from Claude", prompt);
+    const response = await fetch("/api/anthropic", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        human: prompt,
+      }),
+    });
+    console.log("Response from Claude", response);
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.response;
+  } catch (error) {
+    console.error("Error:", error);
+    throw error;
+  }
+}
+
+export async function generateImageFromDalle(prompt: string): Promise<string> {
+  try {
+    const response = await fetch(
+      "https://api.openai.com/v1/images/generations",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${DALLE_KEY}`,
+        },
+        body: JSON.stringify({
+          model: "image-alpha-001",
+          prompt: prompt,
+          num_images: 1,
+          size: "512x512",
+          response_format: "url",
+        }),
+      }
+    );
+    if (!response.ok) throw new Error("Failed to generate image from Dalle");
+
+    const data = await response.json();
+    return data.data[0].url;
+  } catch (error) {
+    console.error("Error:", error);
+    throw error;
+  }
+}
+
+export async function generateImageFromDreamStudio(
+  prompt: string
+): Promise<string> {
+  try {
+    const response = await fetch(
+      `https://api.stability.ai/v1/generation/${engineId}/text-to-image`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${SD_KEY}`,
+        },
+        body: JSON.stringify({
+          text_prompts: [{ text: prompt }],
+          cfg_scale: 7,
+          clip_guidance_preset: "FAST_BLUE",
+          height: 512,
+          width: 512,
+          samples: 1,
+          steps: 30,
+        }),
+      }
+    );
+    console.log("Response from DreamStudio", response);
+    if (!response.ok)
+      throw new Error("Failed to generate image from DreamStudio");
+    const data = await response.json();
+    return data.artifacts[0].base64;
+  } catch (error) {
+    console.error("Error:", error);
+    throw error;
+  }
+}
+
+export async function generateTextFromChatGPT(prompt: string): Promise<string> {
+  try {
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${CHATGPT_KEY}`,
+      },
+      body: JSON.stringify({
+        model: "gpt-3.5-turbo",
+        messages: [{ role: "user", content: prompt }],
+        max_tokens: 1024,
+        n: 1,
+        stop: null,
+        temperature: 0.5,
+        top_p: 0.5,
+      }),
+    });
+    if (!response.ok) throw new Error("Failed to generate text from ChatGPT");
+    const data = await response.json();
+    return data.choices[0].message.content.trim();
+  } catch (error) {
+    console.error("Error:", error);
+    throw error;
+  }
+}
+
+
+Path: D:\Modible\Software\pocketbase-sveltekit-starter\sk\src\lib\utils\prompts.ts
+Contents:
+/* 
+  export const promptFormat = `Title: Comprehensive Idea Exploration and Mind Mapping
+
+Description: This prompt is designed to take a single phrase, idea, or concept as input and explore it in-depth across various dimensions. The goal is to generate a comprehensive, interconnected map of thoughts, questions, possibilities, and related topics to serve as a rich creative or analytical reference.
+
+Input Instructions:
+- Clearly state the phrase, idea, or concept you wish to explore.
+- Provide any specific context or constraints you want the exploration to adhere to, such as a particular field of interest (e.g., technology, philosophy, art), purpose (e.g., innovation, problem-solving, education), or any specific questions you're looking to answer.
+- If applicable, mention any additional perspectives or dimensions you'd like the exploration to cover.
+
+Output Specifications:
+1. **Initial Overview**: A concise summary of the core idea or concept, including its basic definition, common understanding, and any relevant domain-specific interpretations.
+2. **Exploratory Questions**: A comprehensive list of thought-provoking, open-ended questions that arise from the initial idea. These questions should uncover underlying assumptions, explore potential implications, and delve into practical applications.
+3. **Possibilities and Scenarios**: Detailed descriptions of diverse scenarios, applications, or manifestations of the idea across various contexts. This section should expand the horizon of the initial concept, offering innovative, unconventional, and cross-disciplinary perspectives.
+4. **Related Topics and Ideas**: Identification of a wide range of closely and peripherally related topics, ideas, or concepts that could enrich or be enriched by the initial idea. This may include interdisciplinary connections, contrasting viewpoints, or complementary concepts.
+5. **Actionable Insights**: Derive practical insights, recommendations, or action points based on the exploration of the idea. These should be concrete, applicable suggestions that readers can implement or further investigate.
+6. **Resources for Further Exploration**: A carefully curated list of recommended readings, resources, or activities to deepen understanding and expand the exploration of the idea. This could include books, articles, podcasts, videos, courses, or interactive tools.
+
+Example Input:
+"Explore the concept of 'Artificial Intelligence' with a focus on its implications for creative industries, considering ethical considerations, future innovation opportunities, and its potential impact on the workforce."
+
+Example Output:
+1. **Initial Overview**: Artificial Intelligence (AI) refers to the simulation of human intelligence in machines... 🤖
+2. **Exploratory Questions**: 
+   - What are the ethical implications of AI in creative processes? 🎨🔍
+   - Can AI truly replicate the emotional depth and nuance of human creativity? 🧠❓
+   - How might AI augment or enhance human creativity rather than replace it? 🤝💡
+   ...
+3. **Possibilities and Scenarios**: 
+   - In the realm of music production, AI could revolutionize the composition process by... 🎵🎹
+   - AI-powered tools could assist writers in generating unique story ideas, plots, and characters... 📝✨
+   ...
+4. **Related Topics and Ideas**:
+   - Machine Learning 🧠📊
+   - Computational Creativity 🎨💻
+   - Ethical AI 🤖❤️
+   - Human-AI Collaboration 👥🤝🤖
+   ...
+5. **Actionable Insights**:
+   - Creative professionals should proactively learn about AI technologies to harness their potential... 📖💡
+   - Organizations must develop ethical guidelines and frameworks for the use of AI in creative industries... 📜✅
+   ...
+6. **Resources for Further Exploration**:
+   - Book: "The Creativity Code" by Marcus du Sautoy 📚
+   - TED Talk: "How AI can enhance our memory, work and social lives" by Tom Gruber 🎥
+   - Online Course: "Creative Applications of Deep Learning with TensorFlow" on Kadenze 🎓
+   ...
+
+Usage Note: This prompt format can be adapted and expanded based on the complexity of the idea or concept being explored and the depth of exploration desired. 
+Feel free to customize the output specifications and example to suit your specific needs. Only export blog as if it were cut/paste into a magazine. 
+
+Do not include any intro text about the output, just respond with the blog. Use rich markdown formatting and relevant emojis to make the output visually engaging and easy to navigate. 
+
+This is the user's inspiration: `; 
+
+export const titlePrompt = `Craft an SEO-Optimized Title for Your Blog Post: Detailed Instructions
+
+Accurately Reflect Content: Your title should encapsulate the blog's primary themes, insights, and conclusions, integrating relevant keywords for SEO.
+Clear and Engaging: Construct a title that is both informative and enticing, offering a glimpse into the post's value and compelling readers to click.
+Length and Format: Aim for a concise title of 5-7 words, keeping within 50-60 characters to ensure full visibility in search engine results. This aligns with SEO best practices for HTML page titles, maximizing impact and search rankings.
+Title Case and Punctuation: Apply title case capitalization, with all principal words capitalized except for articles, prepositions, and conjunctions. Avoid ending the title with punctuation to maintain clarity and focus.
+Plain Text: Present the title in plain text format, suitable for inclusion in the HTML <title> tag, enhancing both SEO and user click-through rates.
+
+When formulating your blog article's title, follow these guidelines closely to craft a single, SEO-optimized title. Ensure it meets the specified length and character count for optimal online visibility and engagement, without adding extra text or comments.
+
+ONLY OUTPUT THE TITLE
+
+This is the blog: 
+
+`;
+
+export const tagPrompt = `Please analyze the provided blog article and generate relevant tags based on its main points and themes. The tags should:
+
+- Consist of 5 concise, lowercase, single-word tags, can be 2 or 3 words just joined together) that capture the essence of the article
+- They shoud be separated by commas, without any spaces between the commas and words
+- Cover key topics, concepts, or categories mentioned in the article
+- Help readers quickly identify the article's main focus areas and improve searchability
+- Only use alphabets, no special characters or numbers
+- Be output as plain text, strictly adhering to the specified format: 'tag1,tag2,tag3,tag4,tag5'
+
+Example Input:
+"This article discusses the importance of mindfulness in reducing stress and improving overall well-being. It explores various mindfulness techniques, such as meditation, deep breathing, and yoga, and provides practical tips for incorporating these practices into daily life."
+
+Example Output:
+mindfulness,stress,well-being,meditation,breathing
+
+Please generate tags for the given blog article, strictly following the specified format and requirements. Output only the tags, without any additional text or formatting. This is the blog article: `;
+
+export const blogSummaryPrompt = `Please compose a concise and engaging summary for the provided blog article, designed to accompany the article's title on a Tailwind CSS card. The summary should:
+
+- Encapsulate the main points, themes, and value proposition of the article in 50-100 words
+- Be clear, informative, and captivating, encouraging readers to click through and read the full article
+- Highlight the article's unique perspective, actionable insights, or key takeaways
+- Use a mix of simple and compound sentences to create a flowing, easy-to-read narrative
+- Incorporate relevant emojis and markdown formatting to make the summary visually appealing and engaging
+- Be output as a single paragraph of plain text, without any additional content or formatting
+
+Example Input:
+"This article delves into the world of productivity hacks, offering practical tips and strategies to help readers maximize their time and efficiency. From prioritizing tasks using the Eisenhower Matrix to leveraging the power of time-blocking and pomodoro techniques, this post provides a comprehensive guide to boosting productivity in both personal and professional life."
+
+Example Output:
+🚀 Unlock the secrets to peak productivity with this ultimate guide! 🔓📈 Discover proven techniques like the Eisenhower Matrix, time-blocking, and pomodoro to maximize your time and efficiency. 📅⏰ Whether you're looking to crush your personal goals or excel in your professional life, this article offers practical, actionable insights to help you master the art of productivity. 💪📚 Get ready to take your performance to the next level! 🎯🌟
+
+Please generate a summary for the given blog article, strictly adhering to the specified format and requirements. Output only the summary, without any additional text or formatting. This is the blog article: `;
+
+export const imagePrompt = `Enhanced Image Prompt Generation Guidelines:
+
+"Analyze the provided text to create a comprehensive prompt for designing an image that not only encapsulates the text's core message but also adheres to a specific aesthetic directive. The crafted image prompt should:
+
+Concisely depict a scene or concept that aligns with the main ideas or themes presented in the text, ensuring the visual representation is both impactful and relevant.
+Clearly define a minimalist, modern style, emphasizing a sleek design with a 2-3 color monotone palette to ensure visual consistency and cohesion across images.
+Detail the composition, including any critical elements or symbols that should be featured, to reinforce the text's message through visual means.
+Direct the mood, emotion, or atmosphere to reflect the text's tone, using minimalistic design principles to evoke the intended feelings in the audience.
+Utilize natural language to offer clear, precise instructions tailored for an artist or designer, encapsulating the request in 3-5 descriptive sentences.
+The description must be delivered as plain text, focused solely on the image prompt without additional content or formatting.
+
+Make sure to NOT include faces or hands in the image - call this out specifically!
+
+This is the users text:`;
+
+
+export const introPrompt = `You are an innovative thought generator, capable of interpreting a given phrase or idea from five distinct perspectives. When presented with a concept, your task is to rephrase it into five unique ideas, each embodying a different viewpoint:
+
+1. 🌞 Optimistic: Consistently sees the bright side and envisions the most favorable outcomes.
+2. 🌧️ Pessimistic: Tends to focus on the negative aspects and anticipates potential drawbacks.
+3. 🧐 Realistic: Assesses situations objectively, basing decisions on facts and practicality.
+4. 🎨 Creative: Approaches challenges with originality, thinking innovatively to generate novel ideas.
+5. 🔍 Analytical: Methodically deconstructs issues to identify underlying causes and patterns.
+
+For each perspective, generate a thought-provoking interpretation of the original concept, offering a deeper understanding of the idea through the lens of that particular mindset.
+
+Please format your response as follows, using only plain text without any additional separators or formatting (seperate each interpretation with a new line):
+
+Optimistic: [Optimistic interpretation]
+Pessimistic: [Pessimistic interpretation] 
+Realistic: [Realistic interpretation]
+Creative: [Creative interpretation]
+Analytical: [Analytical interpretation]
+
+Example Input:
+"The impact of social media on personal relationships and communication"
+
+Example Output:
+Optimistic: Social media has the power to strengthen connections, fostering deeper relationships and enabling people to stay in touch across vast distances.
+Pessimistic: Social media is eroding the quality of personal interactions, leading to superficial relationships and a growing sense of isolation and disconnection.
+Realistic: Social media is a tool that can facilitate or hinder personal relationships, depending on how it is used and the individual's ability to balance online and offline communication.
+Creative: Social media is transforming the landscape of human interaction, giving rise to new forms of self-expression, collaboration, and community-building that transcend traditional boundaries.
+Analytical: The impact of social media on personal relationships is complex and multifaceted, influenced by factors such as platform design, user behavior, and societal norms, requiring ongoing research and analysis to fully understand its implications.
+
+ONLY RESPOND WITH THE FIVE INTERPRETATIONS, NO ADDITIONAL TEXT OR FORMATTING.
+
+Please provide your five perspectives on the following concept:`; */
+
+export const promptFormat = `You will accept an input ranging from a single word to a complete article and explore it in-depth across various dimensions. The goal is to generate a comprehensive, interconnected map of thoughts, questions, possibilities, and related topics organized into bullet points. These bullet points will serve as "seed" information that the user can later select from to generate more detailed articles.
+
+Input Instructions:
+- Provide the word, phrase, idea, concept, or article you wish to explore.
+- Specify any specific context or constraints you want the exploration to adhere to, such as a particular field of interest (e.g., technology, philosophy, art), purpose (e.g., innovation, problem-solving, education), or any specific questions you're looking to answer.
+- If applicable, mention any additional perspectives or dimensions you'd like the exploration to cover.
+
+Output Specifications:
+1. **Initial Overview**: A concise summary of the core idea or concept, including its basic definition, common understanding, and any relevant domain-specific interpretations.
+2. **Exploratory Questions**: A list of thought-provoking, open-ended questions that arise from the initial idea. These questions should uncover underlying assumptions, explore potential implications, and delve into practical applications.
+3. **Possibilities and Scenarios**: Descriptions of diverse scenarios, applications, or manifestations of the idea across various contexts. This section should expand the horizon of the initial concept, offering innovative, unconventional, and cross-disciplinary perspectives.
+4. **Related Topics and Ideas**: Identification of a wide range of closely and peripherally related topics, ideas, or concepts that could enrich or be enriched by the initial idea. This may include interdisciplinary connections, contrasting viewpoints, or complementary concepts.
+5. **Actionable Insights**: Derive practical insights, recommendations, or action points based on the exploration of the idea. These should be concrete, applicable suggestions that readers can implement or further investigate.
+6. **Resources for Further Exploration**: A curated list of recommended readings, resources, or activities to deepen understanding and expand the exploration of the idea. This could include books, articles, podcasts, videos, courses, or interactive tools.
+
+Please organize the output into relevant bullet points under each of the specified sections. These bullet points will be used as "seed" information for generating more detailed articles later.
+
+Do not include any intro text about the output, just respond with the mind map organized into bullet points. Use markdown formatting to make the output easy to navigate. 
+
+This is the user's input: `;
+
+export const tagTreePrompt = `
+Task: Generate a hierarchical tag structure from a given list of tags
+
+Input:
+- A list of tags as strings in an array
+
+Output:
+[
+  {
+    "name": "Node 1",
+    "children": [
+      {
+        "name": "Child 1",
+        "children": [
+          {
+            "name": "Grandchild 1"
+          },
+          {
+            "name": "Grandchild 2"
+          }
+        ]
+      },
+      {
+        "name": "Child 2"
+      }
+    ]
+  },
+  {
+    "name": "Node 2",
+    "children": [
+      {
+        "name": "Child 3"
+      },
+      {
+        "name": "Child 4"
+      }
+    ]
+  }
+]
+
+Rules:
+1. The hierarchical tag structure should have a maximum depth of 5 levels.
+2. Each node in the hierarchy should have at most 5 children.
+3. The top 3-5 levels of the hierarchy can be AI-generated headings to categorize the tags.
+4. The given tags should be used to complete the lower levels of the hierarchy.
+5. Related tags should be grouped together under appropriate parent nodes.
+6. The hierarchy should be designed to allow users to easily navigate and discover blogs based on the tags.
+7. Broader terms should be placed higher in the hierarchy, while more specific terms should be placed lower.
+8. If there are any tags that don't fit into the generated categories, they should be placed under an "Others" or "Uncategorized" node.
+9. The output should be a valid JSON object in the specified format.
+
+Steps:
+1. Analyze the given list of tags and identify common themes or categories.
+2. Generate 3-5 levels of AI-generated headings to categorize the tags based on their themes or categories.
+3. Assign the tags to appropriate parent nodes in the hierarchy, ensuring that no node has more than 5 children.
+4. Place broader terms higher in the hierarchy and more specific terms lower.
+5. Group related tags together under the same parent node.
+6. If there are any tags that don't fit into the generated categories, create an "Others" or "Uncategorized" node and place them there.
+7. Review the generated hierarchy to ensure it allows for easy navigation and discovery of blogs based on the tags.
+8. Output the hierarchical tag structure as a valid JSON object in the specified format.
+
+Example input:
+[
+  "ai",
+  "machine-learning",
+  "deep-learning",
+  "natural-language-processing",
+  "robotics",
+  "computer-vision",
+  "blockchain",
+  "cryptocurrency",
+  "web3",
+  "smart-contracts",
+  "decentralized-finance",
+  "health",
+  "fitness",
+  "nutrition",
+  "mental-health",
+  "productivity",
+  "time-management",
+  "goal-setting",
+  "motivation",
+  "leadership"
+]
+
+Please generate the hierarchical tag structure for the given list of tags, following the specified format and rules. 
+
+DO NOT INCLUDE ANY INTRODUCTORY TEXT, JUST RESPOND WITH THE JSON OBJECT.
+
+This is the list of tags: `;
+
+export const blogResponsePrompt = `
+###Instruction###
+Given a list of key topics, questions, and ideas provided below, generate a detailed and comprehensive blog post. The blog post should:
+1. Introduce the main theme based on the provided list.
+2. Address each point in the list by providing in-depth analysis, context, or explanation as relevant.
+3. Expand on the provided points with additional information, insights, or examples to create a full narrative.
+4. Ensure the blog is structured logically, with a clear introduction, body (covering all provided points), and conclusion.
+5. Write in an engaging and informative tone, suitable for readers who may be new to the subject or looking to deepen their understanding.
+
+###Input Text###
+- [User-provided list of phrases, questions, and ideas seperated by '/n']
+
+Please parse the input text to identify the key topics and structure the blog post accordingly.
+This is the input text:  
+`;
+
+export const titlePrompt = `Your job is to craft an SEO-Optimized title for the provided blog post. The title should be concise, engaging, and accurately reflect the content of the blog. Follow the guidelines below to create an effective title:
+
+Accurately Reflect Content: Your title should encapsulate the blog's primary themes, insights, and conclusions, integrating relevant keywords for SEO.
+Clear and Engaging: Construct a title that is both informative and enticing, offering a glimpse into the post's value and compelling readers to click.
+Length and Format: Aim for a concise title of 5-7 words, keeping within 50-60 characters to ensure full visibility in search engine results. This aligns with SEO best practices for HTML page titles, maximizing impact and search rankings.
+Title Case and Punctuation: Apply title case capitalization, with all principal words capitalized except for articles, prepositions, and conjunctions. Avoid ending the title with punctuation to maintain clarity and focus.
+Plain Text: Present the title in plain text format, suitable for inclusion in the HTML <title> tag, enhancing both SEO and user click-through rates.
+
+When formulating your blog article's title, follow these guidelines closely to craft a single, SEO-optimized title. Ensure it meets the specified length and character count for optimal online visibility and engagement, without adding extra text or comments.
+
+No apostrophes, No parentheses, or special characters in the title.
+Must be 50 - 60 total characters long.
+ONLY OUTPUT THE TITLE
+
+This is the blog: 
+
+`;
+
+export const tagPrompt = `Please analyze the provided blog article and generate relevant tags based on its main points and themes. The tags should:
+
+- Generate of 3 concise, lowercase tags (can be 2 words joined together) that capture the essence of the article
+- They should be separated by commas, without any spaces between the commas and words
+- Cover key topics, concepts, or categories mentioned in the article
+- Help readers quickly identify the article's main focus areas and improve searchability
+- Only use alphabets, no special characters or numbers
+- Output as plain text, strictly adhering to the specified format: 'tag1,tag2,tag3'
+
+Example Input:
+"This article discusses the importance of mindfulness in reducing stress and improving overall well-being. It explores various mindfulness techniques, such as meditation, deep breathing, and yoga, and provides practical tips for incorporating these practices into daily life."
+
+Example Output:
+mindfulness,stress,wellbeing
+
+Please generate tags for the given blog article, strictly following the specified format and requirements. Output only the tags, without any additional text or formatting. This is the blog article: `;
+
+export const blogSummaryPrompt = `Please compose a concise and engaging summary for the provided blog article, designed to accompany the article's title on a Tailwind CSS card. The summary should:
+
+- Encapsulate the main points, themes, and value proposition of the article in 50 words or less
+- Be clear, informative, and captivating, encouraging readers to click through and read the full article
+- Highlight the article's unique perspective, actionable insights, or key takeaways
+- Use a mix of simple and compound sentences to create a flowing, easy-to-read narrative
+- Incorporate relevant emojis and markdown formatting to make the summary visually appealing and engaging
+- Be output as a single paragraph of plain text, without any additional content or formatting
+
+Example Input:
+"This article delves into the world of productivity hacks, offering practical tips and strategies to help readers maximize their time and efficiency. From prioritizing tasks using the Eisenhower Matrix to leveraging the power of time-blocking and pomodoro techniques, this post provides a comprehensive guide to boosting productivity in both personal and professional life."
+
+Example Output:
+🚀 Unlock the secrets to peak productivity with this ultimate guide! 🔓📈 Discover proven techniques like the Eisenhower Matrix, time-blocking, and pomodoro to maximize your time and efficiency. 💪📚 Get ready to take your performance to the next level! 🎯🌟
+
+Please generate a summary for the given blog article, strictly adhering to the specified format and requirements. Output only the summary, without any additional text or formatting. This is the blog article: `;
+
+export const imagePrompt = `Enhanced Image Prompt Generation Guidelines:
+
+"Analyze the provided text to create a comprehensive prompt for designing an image that not only encapsulates the text's core message but also adheres to a specific aesthetic directive. The crafted image prompt should:
+
+Concisely depict a scene or concept that aligns with the main ideas or themes presented in the text, ensuring the visual representation is both impactful and relevant.
+Clearly define a minimalist, modern style, emphasizing a sleek design with a 2-3 color monotone palette to ensure visual consistency and cohesion across images.
+Detail the composition, including any critical elements or symbols that should be featured, to reinforce the text's message through visual means.
+Direct the mood, emotion, or atmosphere to reflect the text's tone, using minimalistic design principles to evoke the intended feelings in the audience.
+Utilize natural language to offer clear, precise instructions tailored for an artist or designer, encapsulating the request in 3-5 descriptive sentences.
+Explicitly state that the image should not include any faces or hands.
+The description must be delivered as plain text, focused solely on the image prompt without additional content or formatting.
+
+This is the user's text:`;
+
+export const introPrompt = `You are an innovative thought generator, capable of interpreting a given phrase or idea from six distinct perspectives. When presented with a concept, your task is to rephrase it into six unique ideas, each embodying a different viewpoint:
+
+1. 🌞 Optimistic: Consistently sees the bright side and envisions the most favorable outcomes.
+2. 🌧️ Pessimistic: Tends to focus on the negative aspects and anticipates potential drawbacks.
+3. 🧐 Realistic: Assesses situations objectively, basing decisions on facts and practicality.
+4. 🎨 Creative: Approaches challenges with originality, thinking innovatively to generate novel ideas.
+5. 🔍 Analytical: Methodically deconstructs issues to identify underlying causes and patterns.
+6. 😈 Devil's Advocate: Considers the other viewpoints and looks for alternate combinations or perspectives that challenge the prevailing ideas.
+
+For each perspective, generate a thought-provoking interpretation of the original concept, offering a deeper understanding of the idea through the lens of that particular mindset.
+
+Please format your response as follows, using only plain text without any additional separators or formatting (separate each interpretation with a new line):
+
+Optimistic: [Optimistic interpretation]
+Pessimistic: [Pessimistic interpretation] 
+Realistic: [Realistic interpretation]
+Creative: [Creative interpretation]
+Analytical: [Analytical interpretation]
+Devil's Advocate: [Devil's Advocate interpretation]
+
+Example Input:
+"The impact of social media on personal relationships and communication"
+
+Example Output:
+Optimistic: Social media has the power to strengthen connections, fostering deeper relationships and enabling people to stay in touch across vast distances.
+Pessimistic: Social media is eroding the quality of personal interactions, leading to superficial relationships and a growing sense of isolation and disconnection.
+Realistic: Social media is a tool that can facilitate or hinder personal relationships, depending on how it is used and the individual's ability to balance online and offline communication.
+Creative: Social media is transforming the landscape of human interaction, giving rise to new forms of self-expression, collaboration, and community-building that transcend traditional boundaries.
+Analytical: The impact of social media on personal relationships is complex and multifaceted, influenced by factors such as platform design, user behavior, and societal norms, requiring ongoing research and analysis to fully understand its implications.
+Devil's Advocate: While social media can connect people, it may also create echo chambers that reinforce existing beliefs and limit exposure to diverse perspectives, potentially leading to increased polarization and conflict in personal relationships.
+
+ONLY RESPOND WITH THE SIX INTERPRETATIONS, NO ADDITIONAL TEXT OR FORMATTING.
+
+Please provide your six perspectives on the following concept:`;
+
+
+Path: D:\Modible\Software\pocketbase-sveltekit-starter\sk\src\lib\utils\themes.ts
+Contents:
+export const themes = [
+    {
+      id: "light",
+      name: "Light",
+      backgroundColor: "#ffffff",
+      textColor: "#000000",
+      primaryColor: "#f0f0f0",
+      secondaryColor: "#e0e0e0",
+      accentColor: "#d0d0d0"
+    },
+    {
+      id: "dark",
+      name: "Dark",
+      backgroundColor: "#000000",
+      textColor: "#ffffff",
+      primaryColor: "#111111",
+      secondaryColor: "#222222",
+      accentColor: "#333333"
+    },
+    {
+      id: "cupcake",
+      name: "Cupcake",
+      backgroundColor: "#f8e5e5",
+      textColor: "#8b5e34",
+      primaryColor: "#f4c7c7",
+      secondaryColor: "#e6b8b8",
+      accentColor: "#d9a3a3"
+    },
+    {
+      id: "bumblebee",
+      name: "Bumblebee",
+      backgroundColor: "#fef3c7",
+      textColor: "#78350f",
+      primaryColor: "#fde68a",
+      secondaryColor: "#fcd34d",
+      accentColor: "#fbbf24"
+    },
+    {
+      id: "emerald",
+      name: "Emerald",
+      backgroundColor: "#ecfdf5",
+      textColor: "#064e3b",
+      primaryColor: "#d1fae5",
+      secondaryColor: "#a7f3d0",
+      accentColor: "#6ee7b7"
+    },
+    {
+      id: "corporate",
+      name: "Corporate",
+      backgroundColor: "#ffffff",
+      textColor: "#1f2937",
+      primaryColor: "#e5e7eb",
+      secondaryColor: "#d1d5db",
+      accentColor: "#9ca3af"
+    },
+    {
+      id: "synthwave",
+      name: "Synthwave",
+      backgroundColor: "#2b213a",
+      textColor: "#e2e2e2",
+      primaryColor: "#302b63",
+      secondaryColor: "#4a00e0",
+      accentColor: "#8e2de2"
+    },
+    {
+      id: "retro",
+      name: "Retro",
+      backgroundColor: "#fffbeb",
+      textColor: "#3f2a22",
+      primaryColor: "#fde68a",
+      secondaryColor: "#fcd34d",
+      accentColor: "#fbbf24"
+    },
+    {
+      id: "cyberpunk",
+      name: "Cyberpunk",
+      backgroundColor: "#0f0f0f",
+      textColor: "#f1f1f1",
+      primaryColor: "#ff7a18",
+      secondaryColor: "#fe640b",
+      accentColor: "#fd7e14"
+    },
+    {
+      id: "valentine",
+      name: "Valentine",
+      backgroundColor: "#fce7f3",
+      textColor: "#831843",
+      primaryColor: "#fbcfe8",
+      secondaryColor: "#f9a8d4",
+      accentColor: "#f472b6"
+    },
+    {
+      id: "halloween",
+      name: "Halloween",
+      backgroundColor: "#0f172a",
+      textColor: "#f8fafc",
+      primaryColor: "#1e293b",
+      secondaryColor: "#334155",
+      accentColor: "#4b5563"
+    },
+    {
+      id: "garden",
+      name: "Garden",
+      backgroundColor: "#ecfccb",
+      textColor: "#365314",
+      primaryColor: "#d9f99d",
+      secondaryColor: "#bef264",
+      accentColor: "#a3e635"
+    },
+    {
+      id: "forest",
+      name: "Forest",
+      backgroundColor: "#1a202c",
+      textColor: "#f5f5f4",
+      primaryColor: "#2d3748",
+      secondaryColor: "#4a5568",
+      accentColor: "#718096"
+    },
+    {
+      id: "aqua",
+      name: "Aqua",
+      backgroundColor: "#e6fffa",
+      textColor: "#0d5553",
+      primaryColor: "#b2f5ea",
+      secondaryColor: "#81e6d9",
+      accentColor: "#4fd1c5"
+    },
+    {
+      id: "lofi",
+      name: "Lo-Fi",
+      backgroundColor: "#f9fafb",
+      textColor: "#1f2937",
+      primaryColor: "#e5e7eb",
+      secondaryColor: "#d1d5db",
+      accentColor: "#9ca3af"
+    },
+    {
+      id: "pastel",
+      name: "Pastel",
+      backgroundColor: "#fdf2f8",
+      textColor: "#701a75",
+      primaryColor: "#f5d0fe",
+      secondaryColor: "#f0abfc",
+      accentColor: "#e879f9"
+    },
+    {
+      id: "fantasy",
+      name: "Fantasy",
+      backgroundColor: "#f0fdfa",
+      textColor: "#075985",
+      primaryColor: "#ccfbf1",
+      secondaryColor: "#99f6e4",
+      accentColor: "#5eead4"
+    },
+    {
+      id: "wireframe",
+      name: "Wireframe",
+      backgroundColor: "#f8f8f8",
+      textColor: "#333333",
+      primaryColor: "#e2e2e2",
+      secondaryColor: "#cccccc",
+      accentColor: "#b3b3b3"
+    },
+    {
+      id: "black",
+      name: "Black",
+      backgroundColor: "#000000",
+      textColor: "#ffffff",
+      primaryColor: "#111111",
+      secondaryColor: "#222222",
+      accentColor: "#333333"
+    },
+    {
+      id: "luxury",
+      name: "Luxury",
+      backgroundColor: "#1a1a1a",
+      textColor: "#fafafa",
+      primaryColor: "#2e2e2e",
+      secondaryColor: "#3b3b3b",
+      accentColor: "#525252"
+    },
+    {
+      id: "dracula",
+      name: "Dracula",
+      backgroundColor: "#282a36",
+      textColor: "#f8f8f2",
+      primaryColor: "#44475a",
+      secondaryColor: "#6272a4",
+      accentColor: "#bd93f9"
+    },
+    {
+      id: "cmyk",
+      name: "CMYK",
+      backgroundColor: "#0f172a",
+      textColor: "#f1f5f9",
+      primaryColor: "#1e293b",
+      secondaryColor: "#334155",
+      accentColor: "#4b5563"
+    },
+    {
+      id: "autumn",
+      name: "Autumn",
+      backgroundColor: "#fef2f2",
+      textColor: "#7f1d1d",
+      primaryColor: "#fecaca",
+      secondaryColor: "#fca5a5",
+      accentColor: "#f87171"
+    },
+    {
+      id: "business",
+      name: "Business",
+      backgroundColor: "#1e293b",
+      textColor: "#f1f5f9",
+      primaryColor: "#334155",
+      secondaryColor: "#475569",
+      accentColor: "#64748b"
+    },
+    {
+      id: "acid",
+      name: "Acid",
+      backgroundColor: "#f0fdf4",
+      textColor: "#166534",
+      primaryColor: "#dcfce7",
+      secondaryColor: "#bbf7d0",
+      accentColor: "#86efac"
+    },
+    {
+      id: "lemonade",
+      name: "Lemonade",
+      backgroundColor: "#fff7ed",
+      textColor: "#7c2d12",
+      primaryColor: "#ffedd5",
+      secondaryColor: "#fed7aa",
+      accentColor: "#fdba74"
+    },
+    {
+      id: "night",
+      name: "Night",
+      backgroundColor: "#0f172a",
+      textColor: "#f1f5f9",
+      primaryColor: "#1e293b",
+      secondaryColor: "#334155",
+      accentColor: "#4b5563"
+    },
+    {
+      id: "coffee",
+      name: "Coffee",
+      backgroundColor: "#1c1917",
+      textColor: "#fafaf9",
+      primaryColor: "#292524",
+      secondaryColor: "#3f3f46",
+      accentColor: "#52525b"
+    },
+    {
+      id: "winter",
+      name: "Winter",
+      backgroundColor: "#f8fafc",
+      textColor: "#0f172a",
+      primaryColor: "#e2e8f0",
+      secondaryColor: "#cbd5e1",
+      accentColor: "#94a3b8"
+    },
+    {
+      id: "dim",
+      name: "Dim",
+      backgroundColor: "#1a1c1e",
+      textColor: "#e4e4e7",
+      primaryColor: "#2b2b2b",
+      secondaryColor: "#3f3f46",
+      accentColor: "#52525b"
+    },
+    {
+      id: "nord",
+      name: "Nord",
+      backgroundColor: "#f8fafc",
+      textColor: "#0f172a",
+      primaryColor: "#e2e8f0",
+      secondaryColor: "#cbd5e1",
+      accentColor: "#94a3b8"
+    },
+    {
+      id: "sunset",
+      name: "Sunset",
+      backgroundColor: "#f8f5e4",
+      textColor: "#1c1917",
+      primaryColor: "#fed7aa",
+      secondaryColor: "#fed7aa",
+      accentColor: "#fdba74"
+    }
+  ];
+
+Project Tree View:
+├── 
+│   ├── config.ts
+│   └── textGen.py
+├── app
+│   └── stores.ts
+├── components
+│   ├── Alerts.svelte
+│   ├── DateShow.svelte
+│   ├── Delete.svelte
+│   ├── Dialog.svelte
+│   ├── FileInput.svelte
+│   ├── Footer.svelte
+│   ├── Image.svelte
+│   ├── ImageWall.svelte
+│   ├── InterpretationList.svelte
+│   ├── LoadingIndicator.svelte
+│   ├── LoginBadge.svelte
+│   ├── LoginForm.svelte
+│   ├── LoginGuard.svelte
+│   ├── Nav.svelte
+│   ├── PostCard.svelte
+│   ├── PostContent.svelte
+│   ├── PostList.svelte
+│   ├── ServiceForm.svelte
+│   ├── ServiceSelector.svelte
+│   ├── Spinner.svelte
+│   ├── Tab.svelte
+│   ├── TabContent.svelte
+│   ├── TabGroup.svelte
+│   ├── TagEditor.svelte
+│   ├── TagGroup.svelte
+│   ├── ThemeSwitch.svelte
+│   └── TreeView.svelte
+├── pocketbase
+│   ├── generated-types.ts
+│   ├── ImgModal.svelte
+│   ├── index.ts
+│   ├── Paginator.svelte
+│   ├── pocketbase-types.ts
+│   └── ui.ts
+├── services
+│   ├── generateBlog.ts
+│   └── postService.ts
+├── stores
+│   └── postStore.ts
+└── utils
+    ├── api.ts
+    ├── prompts.ts
+    └── themes.ts

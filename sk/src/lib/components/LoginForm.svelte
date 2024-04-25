@@ -52,7 +52,7 @@ async function submit() {
 
 <form
   on:submit|preventDefault={submit}
-  class="rounded-box bg-base-200 flex max-w-md flex-col gap-4 p-6"
+  class="flex max-w-md flex-col gap-4 rounded-box bg-base-200 p-6"
 >
   {#if passwordLogin}
     <h1 class="self-center text-3xl font-bold">
@@ -61,7 +61,7 @@ async function submit() {
 
     <div class="tabs self-center">
       <button
-        class="tab tab-bordered {activeTab === 'SignIn' ? 'tab-active' : ''}"
+        class="tab-bordered tab {activeTab === 'SignIn' ? 'tab-active' : ''}"
         on:click={() => (activeTab = 'SignIn', signup = false)}
         on:keydown={(event) => {
           if (event.key === 'Enter') {
@@ -75,7 +75,7 @@ async function submit() {
         Log in
       </button>
       <button
-        class="tab tab-bordered {activeTab === 'SignUp' ? 'tab-active' : ''}"
+        class="tab-bordered tab {activeTab === 'SignUp' ? 'tab-active' : ''}"
         on:click={() => (activeTab = 'SignUp', signup = true)}
         on:keydown={(event) => {
           if (event.key === 'Enter') {
@@ -97,7 +97,7 @@ async function submit() {
             type="button"
             on:click={() => providerLogin(p, coll)}
           >
-            <i class="fa-brands fa-google text-primary mr-2"></i>
+            <i class="fa-brands fa-google mr-2 text-primary"></i>
             {activeTab === 'SignIn' ? 'Log in' : 'Sign up'} with {p.name}
           </button>
         {/each}

@@ -4,10 +4,11 @@ import { fade, fly } from "svelte/transition";
 import Particles from "svelte-particles";
 import { loadSlim } from "tsparticles-slim";
 
-//$metadata.title =
-//  "mind.ai - Transform Your Thoughts into a Flourishing Mind Garden";
+$metadata.title =
+  "Transform Your Thoughts into a Flourishing Mind Garden with AI";
+
 $metadata.description =
-  "Discover how mind.ai empowers you to nurture, organize, and grow your ideas into something beautiful through AI-powered journaling and the Mind Gardens methodology.";
+  "Join thousands who are already turning their thoughts into thriving mindscapes using our unique AI-powered platform.";
 
 let particlesConfig = {
   particles: {
@@ -22,7 +23,7 @@ let particlesConfig = {
       enable: true,
     },
     number: {
-      value: 20,
+      value: 30,
     },
     size: {
       value: 3,
@@ -40,8 +41,6 @@ let particlesConfig = {
 
 let onParticlesLoaded = (event: CustomEvent<{ particles?: any }>) => {
   const particlesContainer = event.detail.particles;
-  // you can use particlesContainer to call all the Container class
-  // (from the core library) methods like play, pause, refresh, start, stop
 };
 
 let particlesInit = async (engine: any) => {
@@ -54,162 +53,140 @@ let particlesInit = async (engine: any) => {
   <meta name="description" content={$metadata.description} />
 </svelte:head>
 
-
-<!-- Particles Background -->
-<Particles
-id="tsparticles"
-options={particlesConfig}
-on:particlesLoaded={onParticlesLoaded}
-particlesInit={particlesInit}
-/>
-
 <!-- Hero Section -->
 <div
-  class="hero min-h-screen"
+  class="hero min-h-screen bg-base-200"
   style="background-image: url(img/treeBrain.png);"
 >
   <div class="hero-overlay bg-opacity-60"></div>
-  <div class="hero-content text-neutral-content text-center">
+  <div class="hero-content text-center text-neutral-content">
     <div class="max-w-md">
       <h1 class="mb-5 text-5xl font-bold">
-        Transform Your Thoughts into a Flourishing Mind Garden with AI
+        {$metadata.title}
       </h1>
       <p class="mb-5">
-        Discover how mind.ai empowers you to nurture, organize, and grow your
-        ideas into something beautiful.
+        Discover how mind.ai empowers you to organize and grow your ideas.
       </p>
-      <button class="btn btn-primary">Plant Your First Thought Today</button>
+      <button class="btn btn-primary btn-lg">Start Cultivating Now</button>
     </div>
   </div>
 </div>
-
-<!-- Introduction to Mind Gardens Methodology -->
-<div class="bg-base-100 py-16">
-  <div class="container mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="mb-12 text-center" transition:fade={{ duration: 500 }}>
-      <h2 class="mb-4 text-4xl font-bold">Cultivate Your Mental Ecosystem</h2>
-      <p class="text-xl">
-        In the Mind Gardens methodology, each thought or idea is a seed that can
-        grow into insights and creations. mind.ai facilitates this growth
-        through AI-powered journaling, helping you nurture your mental
-        ecosystem.
-      </p>
-    </div>
-    <div class="flex justify-center">
-      <img
-        src="img/mindgarden.png"
-        alt="Mind Garden Infographic"
-        class="w-full max-w-screen-md rounded-xl object-cover shadow-xl"
-        transition:fly={{ y: 20, duration: 500 }}
-      />
-    </div>
-  </div>
-</div>
-
 <!-- Features and Benefits -->
-<div class="bg-base-200 py-16" id="features">
-  <div class="container mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
-      <div class="flex items-center justify-center">
+<div class="bg-base-100 py-24" id="features">
+  <div class="container mx-auto px-4">
+    <div class="flex flex-wrap lg:flex-nowrap">
+      <div class="w-full lg:w-1/2 lg:pr-12">
         <img
           src="img/cave.png"
           alt="Thought Capture Demo"
-          class="h-96 w-full object-cover"
+          class="mb-8 rounded-lg shadow-lg lg:mb-0"
         />
       </div>
-      <div transition:fly={{ x: 20, duration: 500 }}>
-        <h3 class="mb-4 text-3xl font-bold">Effortless Thought Capture</h3>
-        <p class="mb-4">
-          Quickly jot down your ideas and watch them grow visually in your mind
-          garden. The intuitive interface makes it easy to capture and organize
-          your thoughts.
+      <div class="w-full lg:w-1/2" transition:fly={{ x: 20, duration: 500 }}>
+        <h2 class="mb-4 text-4xl font-bold">Effortless Thought Capture</h2>
+        <p class="mb-8 text-lg">
+          Quickly jot down ideas and watch them grow visually in your mind
+          garden.
         </p>
-        <h3 class="mb-4 text-3xl font-bold">Personalized AI Assistance</h3>
-        <p class="mb-4">
-          Our AI learns from your unique thought patterns and suggests prompts
-          to help your ideas flourish. It's like having a personal gardener for
-          your mind.
+        <h2 class="mb-4 text-4xl font-bold">Personalized AI Assistance</h2>
+        <p class="mb-8 text-lg">
+          Our AI learns from your unique thought patterns to help your ideas
+          flourish.
         </p>
-        <h3 class="mb-4 text-3xl font-bold">Private and Secure</h3>
-        <p>
-          Your mind garden is your private oasis. We use state-of-the-art
-          encryption to ensure your thoughts remain confidential and secure.
+        <h2 class="mb-4 text-4xl font-bold">Private and Secure</h2>
+        <p class="text-lg">
+          Your mind garden is your private oasis, secured with the latest
+          encryption.
         </p>
       </div>
     </div>
   </div>
 </div>
-
-<!-- How It Works -->
-<div class="bg-base-100 py-16" id="how-it-works">
-  <div class="container mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="mb-12 text-center" transition:fade={{ duration: 500 }}>
-      <h2 class="mb-4 text-4xl font-bold">How mind.ai Works</h2>
-      <p class="text-xl">
-        Our AI-powered journaling process is simple and intuitive.
-      </p>
-    </div>
-    <div class="grid grid-cols-1 gap-8 md:grid-cols-3">
-      <div class="card bg-base-200 shadow-xl">
-        <figure class="px-10 pt-10">
-          <img src="img/waterfall.png" alt="Capture Icon" class="rounded-xl" />
-        </figure>
-        <div class="card-body items-center text-center">
-          <h3 class="card-title">1. Capture</h3>
-          <p>Jot down your thoughts, ideas, and experiences in the app.</p>
-        </div>
-      </div>
-      <div class="card bg-base-200 shadow-xl">
-        <figure class="px-10 pt-10">
-          <img src="img/thoughts.png" alt="Nurture Icon" class="rounded-xl" />
-        </figure>
-        <div class="card-body items-center text-center">
-          <h3 class="card-title">2. Nurture</h3>
-          <p>
-            Our AI provides personalized prompts and insights to help your ideas
-            grow.
-          </p>
-        </div>
-      </div>
-      <div class="card bg-base-200 shadow-xl">
-        <figure class="px-10 pt-10">
-          <img src="img/mountain.png" alt="Flourish Icon" class="rounded-xl" />
-        </figure>
-        <div class="card-body items-center text-center">
-          <h3 class="card-title">3. Flourish</h3>
-          <p>Watch your thoughts blossom into a beautiful mind garden.</p>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Pricing -->
-<div class="bg-base-200 py-16" id="pricing">
-  <div class="container mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="mb-12 text-center" transition:fade={{ duration: 500 }}>
-      <h2 class="mb-4 text-4xl font-bold">Simple, Transparent Pricing</h2>
-      <p class="text-xl">Choose the plan that best fits your needs.</p>
-    </div>
-    <div class="grid grid-cols-1 gap-8 md:grid-cols-3">
-      <!-- Pricing plans go here -->
-    </div>
-  </div>
-</div>
-
 <!-- Testimonials -->
-<div class="bg-base-100 py-16" id="testimonials">
-  <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+<div class="bg-base-200 py-24" id="testimonials">
+  <div class="container mx-auto px-4">
     <h2 class="mb-12 text-center text-4xl font-bold">What Our Users Say</h2>
-    <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
-      <!-- Testimonials go here -->
+    <div class="grid gap-8 md:grid-cols-2">
+      <div class="card bg-base-100 shadow-xl">
+        <div class="card-body">
+          <p class="mb-4">
+            "mind.ai has transformed the way I organize and develop my ideas.
+            It's a game-changer!"
+          </p>
+          <div class="card-actions justify-end">
+            <p class="text-xl font-bold">John Doe</p>
+            <p class="text-base-content/70">CEO, Acme Inc.</p>
+          </div>
+        </div>
+      </div>
+      <div class="card bg-base-100 shadow-xl">
+        <div class="card-body">
+          <p class="mb-4">
+            "The AI assistance is incredible. It's like having a personal
+            thought curator."
+          </p>
+          <div class="card-actions justify-end">
+            <p class="text-xl font-bold">Jane Smith</p>
+            <p class="text-base-content/70">Creative Director, Studio X</p>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
-
+<!-- Pricing -->
+<div class="bg-base-100 py-24" id="pricing">
+  <div class="container mx-auto px-4">
+    <h2 class="mb-12 text-center text-4xl font-bold">
+      Simple, Transparent Pricing
+    </h2>
+    <div class="grid gap-8 md:grid-cols-3">
+      <div class="card bg-base-200 shadow-xl">
+        <div class="card-body items-center text-center">
+          <h2 class="card-title text-3xl">Basic</h2>
+          <p class="text-4xl font-bold">
+            $9<span class="text-base font-normal">/month</span>
+          </p>
+          <ul class="mb-8">
+            <li>10 mind maps</li>
+            <li>Basic AI assistance</li>
+            <li>5 GB storage</li>
+          </ul>
+          <button class="btn btn-primary btn-block">Get Started</button>
+        </div>
+      </div>
+      <div class="card bg-primary text-primary-content shadow-xl">
+        <div class="card-body items-center text-center">
+          <h2 class="card-title text-3xl">Pro</h2>
+          <p class="text-4xl font-bold">
+            $19<span class="text-base font-normal">/month</span>
+          </p>
+          <ul class="mb-8">
+            <li>Unlimited mind maps</li>
+            <li>Advanced AI assistance</li>
+            <li>20 GB storage</li>
+          </ul>
+          <button class="btn btn-secondary btn-block">Get Started</button>
+        </div>
+      </div>
+      <div class="card bg-base-200 shadow-xl">
+        <div class="card-body items-center text-center">
+          <h2 class="card-title text-3xl">Enterprise</h2>
+          <p class="text-4xl font-bold">Custom</p>
+          <ul class="mb-8">
+            <li>Dedicated support</li>
+            <li>Custom AI models</li>
+            <li>Unlimited storage</li>
+          </ul>
+          <button class="btn btn-primary btn-block">Contact Us</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 <!-- Contact -->
-<div class="bg-base-200 py-16" id="contact">
-  <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+<div class="bg-base-200 py-24" id="contact">
+  <div class="container mx-auto px-4">
     <div class="mb-12 text-center" transition:fade={{ duration: 500 }}>
       <h2 class="mb-4 text-4xl font-bold">Get in Touch</h2>
       <p class="text-xl">
@@ -217,12 +194,46 @@ particlesInit={particlesInit}
       </p>
     </div>
     <div class="flex justify-center">
-      <!-- Contact form goes here -->
+      <div class="card w-full max-w-md bg-base-100 shadow-xl">
+        <div class="card-body">
+          <div class="form-control">
+            <label class="label" for="name">
+              <span class="label-text">Name</span>
+            </label>
+            <input
+              type="text"
+              id="name"
+              placeholder="Enter your name"
+              class="input input-bordered"
+            />
+          </div>
+          <div class="form-control">
+            <label class="label" for="email">
+              <span class="label-text">Email</span>
+            </label>
+            <input
+              type="email"
+              id="email"
+              placeholder="Enter your email"
+              class="input input-bordered"
+            />
+          </div>
+          <div class="form-control">
+            <label class="label" for="message">
+              <span class="label-text">Message</span>
+            </label>
+            <textarea
+              id="message"
+              placeholder="Enter your message"
+              class="textarea textarea-bordered"
+              rows="4"
+            ></textarea>
+          </div>
+          <div class="card-actions mt-6 justify-end">
+            <button class="btn btn-primary">Send Message</button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
-
-<!-- Footer -->
-<footer class="footer footer-center bg-base-100 text-base-content rounded p-10">
-  <!-- Footer content goes here -->
-</footer>

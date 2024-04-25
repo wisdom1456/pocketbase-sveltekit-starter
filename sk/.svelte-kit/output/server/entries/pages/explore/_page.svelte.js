@@ -1,7 +1,7 @@
 import { s as subscribe, a as set_store_value } from "../../../chunks/utils.js";
 import { c as create_ssr_component, v as validate_component } from "../../../chunks/ssr.js";
-import { m as metadata } from "../../../chunks/stores2.js";
-import "../../../chunks/index.js";
+import { m as metadata } from "../../../chunks/metadataStore.js";
+import "../../../chunks/index2.js";
 import "../../../chunks/Alerts.js";
 import "marked";
 import { L as LoginGuard } from "../../../chunks/LoginGuard.js";

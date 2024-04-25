@@ -8,7 +8,7 @@ export let post: PostsResponse;
 </script>
 
 <div
-  class="card bg-base-100 border-secondary border-3 m-2 flex flex-1 flex-col justify-between border shadow-xl"
+  class="border-3 card m-2 flex flex-1 flex-col justify-between border border-secondary bg-base-100 shadow-xl"
 >
   <div>
     <figure>
@@ -38,11 +38,11 @@ export let post: PostsResponse;
       <div class="group relative px-2">
         <a
           href={`/posts/${post.slug}`}
-          class="prose-lg text-primary hover:text-secondary font-bold"
+          class="prose-lg font-bold text-primary hover:text-secondary"
         >
           {post.title}
         </a>
-        <div class="prose-sm text-base-content mt-3 line-clamp-6 text-justify">
+        <div class="prose-sm mt-3 line-clamp-6 text-justify text-base-content">
           <Markdown source={post.blogSummary} />
         </div>
       </div>

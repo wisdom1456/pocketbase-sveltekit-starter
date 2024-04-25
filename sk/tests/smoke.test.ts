@@ -91,5 +91,3 @@ test("delete post", async ({ page }) => {
   await page.getByRole("button", { name: "Yes - Proceed" }).click();
   await expect(page).toHaveURL(/\/posts\/$/);
 });
-
-

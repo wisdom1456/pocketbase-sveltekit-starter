@@ -7,6 +7,7 @@ import type {
 } from "$lib/pocketbase/generated-types";
 import { ensureTagsExist, generateImageFromDreamStudio } from "$lib/utils/api";
 import { alertOnFailure } from "$lib/pocketbase/ui";
+import { callAPI } from "$lib/utils/apiUtils";
 import {
   promptFormat,
   titlePrompt,
@@ -37,39 +38,6 @@ interface PostData {
 export interface ServiceModelSelection {
   selectedService: string;
   selectedModel: string;
-}
-
-// Function to call the API
-async function callAPI(
-  selectedService: string,
-  selectedModel: string,
-  inputText: string
-): Promise<string> {
-  if (!selectedService || !selectedModel) {
-    console.log("Selected service: ", selectedService);
-    console.log("Selected model: ", selectedModel);
-
-    // Select the first service and first model as default
-    const defaultService = availableServices[0];
-    selectedService = defaultService.name;
-    selectedModel = defaultService.models[0];
-
-    console.log("Default service selected: ", selectedService);
-    console.log("Default model selected: ", selectedModel);
-  }
-
-  const response = await fetch(`/api/${selectedService.toLowerCase()}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text: inputText, model: selectedModel }),
-  });
-
-  if (!response.ok) {
-    throw new Error("Network response was not ok");
-  }
-
-  const data = await response.json();
-  return data.result;
 }
 
 // Main function to generate and save the blog post
@@ -142,17 +110,20 @@ export async function generateBlog(
       selectedModel,
       `${imagePrompt}'${post.body}'`
     );
-    
-    // Create the post using the createPost function from postsService
-    const createdPost = await createPost(post as Partial<PostsResponse>, imageResponseText, engineId);
 
+    // Create the post using the createPost function from postsService
+    const createdPost = await createPost(
+      post as Partial<PostsResponse>,
+      imageResponseText,
+      engineId
+    );
 
     if (createdPost !== undefined) {
       // Redirect to the newly created post
       goto(
-        `${import.meta.env.VITE_APP_SK_URL}/posts/${
+        `${import.meta.env.VITE_APP_SK_URL}posts/${
           (createdPost as PostsResponse).slug
-        }/inspire`
+        }`
       );
     } else {
       throw new Error("Failed to create the post.");

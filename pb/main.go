@@ -55,7 +55,7 @@ const (
 	PostsCollection         = "posts"
 	ImagesCollection        = "images"
 	DefaultAPIHost          = "https://api.stability.ai"
-	StableDiffusionEngineID = "stable-diffusion-v1-6"
+	StableDiffusionEngineID = "stable-diffusion-xl-1024-v1-0"
 )
 
 func defaultPublicDir() string {

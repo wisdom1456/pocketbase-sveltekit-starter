@@ -26,7 +26,7 @@ const config = {
       $lib: "src/lib",
     },
     prerender: {
-      entries: ['*', '/posts/[slug]'],
+      entries: ["*", "/posts/[slug]"],
     },
   },
 };

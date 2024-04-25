@@ -10,11 +10,16 @@ export let thumbOnly = false;
 
 {#if record && filename}
   {#await client.getFileUrl(record, filename, { thumb: "100x100" }) then src}
-    <Dialog>
-      <img src={src} alt="todo" slot="trigger" class="thumbnail" />
+    <Dialog open={true}>
+      <img
+        src={src}
+        alt="Image thumbnail"
+        class="thumbnail"
+        aria-hidden="true"
+      />
       {#if !thumbOnly}
-        {#await client.getFileUrl(record, filename) then src}
-          <img src={src} alt="todo" />
+        {#await client.getFileUrl(record, filename) then fullSrc}
+          <img src={fullSrc} alt="Full image" aria-hidden="true" />
         {/await}
       {/if}
     </Dialog>

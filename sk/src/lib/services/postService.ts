@@ -147,7 +147,6 @@ async function createImage(imagePrompt: string, engineId: string) {
   return imageData.id;
 }
 
-
 export async function updatePost(
   postId: string,
   postData: Partial<PostsResponse>

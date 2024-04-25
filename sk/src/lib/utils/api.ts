@@ -1,6 +1,5 @@
 // src/lib/utils/api.ts
 // Improved error handling and abstraction of API URL and parameters
-
 import { env } from "$env/dynamic/public";
 import { client } from "$lib/pocketbase";
 
@@ -13,7 +12,7 @@ const SD_KEY = import.meta.env.VITE_STABILITY_API_KEY;
 const CLAUDE_KEY = import.meta.env.VITE_ANTHROPIC_API_KEY;
 const DALLE_KEY = import.meta.env.VITE_CHATGPT_API_KEY;
 
-//validate that keys are present
+// Validate that keys are present
 if (!API_BASE_URL) {
   throw new Error("Missing APP_BASE_URL");
 }
@@ -46,6 +45,10 @@ export const availableServices = [
     name: "OpenAI",
     models: ["gpt-4-turbo-preview", "gpt-3.5-turbo"],
   },
+  {
+    name: "DreamStudio",
+    models: ["text-to-image"],
+  }
 ];
 
 export async function apiRequest<T>(
@@ -124,7 +127,7 @@ export async function getTagsForPost(slug: string): Promise<string> {
 export async function generateTextFromClaude(prompt: string): Promise<string> {
   try {
     console.log("Generating text from Claude", prompt);
-    const response = await fetch("/api/proxy/anthropic", {
+    const response = await fetch("/api/anthropic", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

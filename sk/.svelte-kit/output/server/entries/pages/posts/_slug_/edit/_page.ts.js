@@ -1,5 +1,4 @@
-import { c as client } from "../../../../../chunks/index.js";
-import "../../../../../chunks/Alerts.js";
+import { c as client } from "../../../../../chunks/index2.js";
 const load = async function({ params }) {
   const { slug } = params;
   try {

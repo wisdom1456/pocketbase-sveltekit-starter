@@ -1,6 +1,6 @@
 import { s as subscribe } from "../../../chunks/utils.js";
-import { c as create_ssr_component, a as each, b as add_attribute, d as createEventDispatcher, v as validate_component } from "../../../chunks/ssr.js";
-import { c as client, a as authModel } from "../../../chunks/index.js";
+import { c as create_ssr_component, b as each, a as add_attribute, f as createEventDispatcher, v as validate_component } from "../../../chunks/ssr.js";
+import { c as client, a as authModel } from "../../../chunks/index2.js";
 import "../../../chunks/Alerts.js";
 import { a as availableServices, S as ServiceSelector } from "../../../chunks/ServiceSelector.js";
 import "marked";
@@ -61,7 +61,7 @@ const Page = create_ssr_component(($$result, $$props, $$bindings, slots) => {
             }
           },
           {}
-        )} <input type="text" class="input input-bordered bg-base-100 w-full" placeholder="Enter thoughts here"${add_attribute("value", chatGptPrompt, 0)}> <div class="text-right" data-svelte-h="svelte-1j634f4"><button type="submit" class="btn btn-primary">Generate</button></div> <div class="border-accent border border-4">${validate_component(ImageWall, "ImageWall").$$render($$result, {}, {}, {})}</div></form></main>`}`}</div>`;
+        )} <input type="text" class="input input-bordered bg-base-100 w-full" placeholder="Enter thoughts here"${add_attribute("value", chatGptPrompt, 0)}> <div class="text-right" data-svelte-h="svelte-dyxuw0"><button type="submit" class="btn btn-primary">Generate</button></div> <div class="border-accent border">${validate_component(ImageWall, "ImageWall").$$render($$result, {}, {}, {})}</div></form></main>`}`}</div>`;
       }
     })}`;
   } while (!$$settled);

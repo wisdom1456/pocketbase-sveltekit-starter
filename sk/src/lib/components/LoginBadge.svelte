@@ -16,7 +16,7 @@ async function logout() {
   // Ensure dropdown is closed on logout
 }
 
-function getFileUrl(authModel: { id: any; }, avatar: any) {
+function getFileUrl(authModel: { id: any }, avatar: any) {
   const baseUrl =
     import.meta.env.VITE_APP_BASE_URL + "/api/files/_pb_users_auth_";
   const userId = authModel.id;
@@ -43,13 +43,12 @@ onDestroy(() => {
     >
       <div tabindex="0" role="button" class="btn">
         {$authModel?.name || $authModel?.username || 'User'}
-        
       </div>
     </button>
     {#if isDropdownOpen}
       <ul
         transition:fly={{ y: 10, duration: 200 }}
-        class="dropdown-content menu bg-base-200 rounded-box absolute right-0 z-[1] mt-2 w-52 p-2 shadow"
+        class="menu dropdown-content absolute right-0 z-[1] mt-2 w-52 rounded-box bg-base-200 p-2 shadow"
       >
         <li>
           <button class="justify-between" on:click={() => (isDialogOpen = true)}
@@ -62,7 +61,7 @@ onDestroy(() => {
             <img alt="Profile" src="/avatar.png" class="w-8 rounded-full" />
             <div class="flex flex-col">
               <h3 class="font-bold">User name</h3>
-              <span class="text-accent text-xs">username@email.com</span>
+              <span class="text-xs text-accent">username@email.com</span>
             </div>
           </button>
         </li>

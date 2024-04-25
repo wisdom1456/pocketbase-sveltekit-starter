@@ -63,7 +63,7 @@ function closeMenu() {
         {#if isOpen}
           <ul
             transition:fly={{ y: -10, duration: 200 }}
-            class="menu menu-compact dropdown-content rounded-box bg-base-300 z-20 mt-3 w-52 p-2 shadow"
+            class="menu-compact menu dropdown-content z-20 mt-3 w-52 rounded-box bg-base-300 p-2 shadow"
           >
             {#if $authModel}
               {#each appLinks as [path, label]}

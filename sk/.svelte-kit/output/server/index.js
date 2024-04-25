@@ -1,5 +1,5 @@
 import { b as base, a as assets, r as reset } from "./chunks/paths.js";
-import { w as writable, r as readable } from "./chunks/index2.js";
+import { w as writable, r as readable } from "./chunks/index.js";
 import { p as public_env, o as options, s as set_private_env, a as set_public_env, g as get_hooks } from "./chunks/internal.js";
 const DEV = false;
 const SVELTE_KIT_ASSETS = "/_svelte_kit_assets";

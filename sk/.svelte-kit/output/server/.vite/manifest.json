@@ -17,7 +17,7 @@
     "imports": [
       "_utils.js",
       "_ssr.js",
-      "_index2.js"
+      "_index.js"
     ]
   },
   "_LoginForm.js": {
@@ -25,7 +25,7 @@
     "imports": [
       "_utils.js",
       "_ssr.js",
-      "_index.js"
+      "_index2.js"
     ]
   },
   "_LoginGuard.js": {
@@ -33,7 +33,7 @@
     "imports": [
       "_utils.js",
       "_ssr.js",
-      "_index.js",
+      "_index2.js",
       "_LoginForm.js"
     ]
   },
@@ -41,7 +41,7 @@
     "file": "chunks/ServiceSelector.js",
     "imports": [
       "_ssr.js",
-      "_index.js"
+      "_index2.js"
     ]
   },
   "_SvelteMarkdown.js": {
@@ -54,13 +54,13 @@
   "_index.js": {
     "file": "chunks/index.js",
     "imports": [
-      "_index2.js"
+      "_utils.js"
     ]
   },
   "_index2.js": {
     "file": "chunks/index2.js",
     "imports": [
-      "_utils.js"
+      "_index.js"
     ]
   },
   "_internal.js": {
@@ -68,6 +68,12 @@
     "imports": [
       "_ssr.js",
       "_paths.js"
+    ]
+  },
+  "_metadataStore.js": {
+    "file": "chunks/metadataStore.js",
+    "imports": [
+      "_index.js"
     ]
   },
   "_paths.js": {
@@ -83,14 +89,6 @@
     "file": "chunks/stores.js",
     "imports": [
       "_ssr.js"
-    ]
-  },
-  "_stores2.js": {
-    "file": "chunks/stores2.js",
-    "imports": [
-      "_index2.js",
-      "_index.js",
-      "_Alerts.js"
     ]
   },
   "_utils.js": {
@@ -110,26 +108,26 @@
     "file": "index.js",
     "imports": [
       "_paths.js",
-      "_index2.js",
+      "_index.js",
       "_internal.js"
     ],
     "isEntry": true,
     "src": "node_modules/.pnpm/@sveltejs+kit@1.27.6_svelte@4.2.8_vite@4.5.0/node_modules/@sveltejs/kit/src/runtime/server/index.js"
   },
   "src/routes/+layout.css": {
-    "file": "_app/immutable/assets/_layout.766808f1.css",
+    "file": "_app/immutable/assets/_layout.014a53d0.css",
     "src": "src/routes/+layout.css"
   },
   "src/routes/+layout.svelte": {
     "css": [
-      "_app/immutable/assets/_layout.766808f1.css"
+      "_app/immutable/assets/_layout.014a53d0.css"
     ],
     "file": "entries/pages/_layout.svelte.js",
     "imports": [
       "_utils.js",
       "_ssr.js",
-      "_stores2.js",
-      "_index.js",
+      "_metadataStore.js",
+      "_index2.js",
       "_Alerts.js",
       "_paths.js",
       "_stores.js",
@@ -151,7 +149,7 @@
     "imports": [
       "_utils.js",
       "_ssr.js",
-      "_stores2.js"
+      "_metadataStore.js"
     ],
     "isEntry": true,
     "src": "src/routes/+page.svelte"
@@ -167,7 +165,7 @@
   "src/routes/auditlog/[coll]/[id]/+page.ts": {
     "file": "entries/pages/auditlog/_coll_/_id_/_page.ts.js",
     "imports": [
-      "_index.js"
+      "_index2.js"
     ],
     "isEntry": true,
     "src": "src/routes/auditlog/[coll]/[id]/+page.ts"
@@ -185,7 +183,7 @@
     "imports": [
       "_utils.js",
       "_ssr.js",
-      "_index.js",
+      "_index2.js",
       "_Alerts.js",
       "_ServiceSelector.js",
       "_LoginGuard.js"
@@ -198,8 +196,8 @@
     "imports": [
       "_utils.js",
       "_ssr.js",
-      "_stores2.js",
-      "_index.js",
+      "_metadataStore.js",
+      "_index2.js",
       "_Alerts.js",
       "_LoginGuard.js"
     ],
@@ -233,20 +231,15 @@
     "imports": [
       "_utils.js",
       "_ssr.js",
-      "_stores2.js",
-      "_index.js",
+      "_metadataStore.js",
+      "_index2.js",
       "_Alerts.js",
       "_SvelteMarkdown.js",
-      "_index2.js",
+      "_index.js",
       "_LoginGuard.js"
     ],
     "isEntry": true,
     "src": "src/routes/posts/+page.svelte"
-  },
-  "src/routes/posts/+page.ts": {
-    "file": "entries/pages/posts/_page.ts.js",
-    "isEntry": true,
-    "src": "src/routes/posts/+page.ts"
   },
   "src/routes/posts/[slug]/+page.svelte": {
     "css": [
@@ -257,7 +250,7 @@
       "_utils.js",
       "_ssr.js",
       "_stores.js",
-      "_index.js",
+      "_index2.js",
       "_LoginGuard.js"
     ],
     "isEntry": true,
@@ -269,7 +262,7 @@
       "_utils.js",
       "_ssr.js",
       "_stores.js",
-      "_index.js",
+      "_index2.js",
       "_LoginGuard.js"
     ],
     "isEntry": true,
@@ -278,8 +271,7 @@
   "src/routes/posts/[slug]/edit/+page.ts": {
     "file": "entries/pages/posts/_slug_/edit/_page.ts.js",
     "imports": [
-      "_index.js",
-      "_Alerts.js"
+      "_index2.js"
     ],
     "isEntry": true,
     "src": "src/routes/posts/[slug]/edit/+page.ts"
@@ -293,8 +285,8 @@
       "_utils.js",
       "_ssr.js",
       "_stores.js",
-      "_stores2.js",
       "_index.js",
+      "_index2.js",
       "_Alerts.js",
       "_ServiceSelector.js",
       "_LoginGuard.js"
@@ -307,8 +299,8 @@
     "imports": [
       "_utils.js",
       "_ssr.js",
-      "_stores2.js",
-      "_index.js",
+      "_metadataStore.js",
+      "_index2.js",
       "_Alerts.js",
       "_LoginGuard.js"
     ],
@@ -323,9 +315,9 @@
     "imports": [
       "_utils.js",
       "_ssr.js",
-      "_index.js",
       "_index2.js",
-      "_stores2.js",
+      "_index.js",
+      "_metadataStore.js",
       "_SvelteMarkdown.js",
       "_Alerts.js",
       "_LoginGuard.js"
@@ -350,7 +342,7 @@
       "_utils.js",
       "_ssr.js",
       "_stores.js",
-      "_index.js",
+      "_index2.js",
       "_Alerts.js",
       "_LoginGuard.js"
     ],

@@ -1,7 +1,7 @@
 import { s as subscribe } from "../../../../../chunks/utils.js";
 import { c as create_ssr_component, v as validate_component } from "../../../../../chunks/ssr.js";
 import { p as page } from "../../../../../chunks/stores.js";
-import "../../../../../chunks/index.js";
+import "../../../../../chunks/index2.js";
 import "marked";
 import { L as LoginGuard } from "../../../../../chunks/LoginGuard.js";
 const Page = create_ssr_component(($$result, $$props, $$bindings, slots) => {

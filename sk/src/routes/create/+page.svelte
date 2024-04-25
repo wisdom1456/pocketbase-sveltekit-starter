@@ -19,7 +19,7 @@ import ImageWall from "$lib/components/ImageWall.svelte";
 import { generateBlog } from "$lib/services/generateBlog";
 
 import { serviceModelSelectionStore } from "$lib/app/stores";
-    import LoginGuard from "$lib/components/LoginGuard.svelte";
+import LoginGuard from "$lib/components/LoginGuard.svelte";
 
 const dispatch = createEventDispatcher();
 let inputText = "";
@@ -158,7 +158,8 @@ function parseInterpretations(completionText: string) {
         title,
         text,
         imageUrl:
-          imageUrls[title as keyof typeof imageUrls] || "default-image.jpg", // Fallback to a default image if the title does not match
+          imageUrls[title as keyof typeof imageUrls] ||
+          "https://via.placeholder.com/800x400.png?peace", // Fallback to a default image if the title does not match
       };
     });
 
@@ -198,89 +199,91 @@ function selectInterpretation(interpretation: string) {
 </script>
 
 <LoginGuard>
-<div>
-  {#if !formSubmitted}
-    {#if isLoading.content}
-      <LoadingIndicator message="Loading interpretations..." />
-    {:else}
+  <div>
+    {#if !formSubmitted}
+      {#if isLoading.content}
+        <LoadingIndicator message="Loading interpretations..." />
+      {:else}
+        <main
+          class="container mx-auto my-12 px-4 sm:px-6 lg:px-8"
+          in:fly={{ y: 50, duration: 500 }}
+        >
+          <form
+            on:submit|preventDefault={() => generateGptInterpretations(chatGptPrompt)}
+            class="bg-base-200 space-y-6 rounded-lg p-6 shadow"
+          >
+            <ServiceSelector
+              bind:selectedService={selectedService}
+              bind:selectedModel={selectedModel}
+            />
+            <input
+              type="text"
+              class="input input-bordered bg-base-100 w-full"
+              bind:value={chatGptPrompt}
+              placeholder="Enter thoughts here"
+            />
+            <div class="text-right">
+              <button type="submit" class="btn btn-primary">Generate</button>
+            </div>
+            <div class="border-accent border border-4">
+              <ImageWall></ImageWall>
+            </div>
+          </form>
+        </main>
+      {/if}
+    {:else if chatGptInts.length > 0 && !isGeneratingBlog}
       <main
         class="container mx-auto my-12 px-4 sm:px-6 lg:px-8"
         in:fly={{ y: 50, duration: 500 }}
       >
-        <form
-          on:submit|preventDefault={() => generateGptInterpretations(chatGptPrompt)}
-          class="bg-base-200 space-y-6 rounded-lg p-6 shadow"
-        >
-          <ServiceSelector
-            bind:selectedService={selectedService}
-            bind:selectedModel={selectedModel}
-          />
-          <input
-            type="text"
-            class="input input-bordered bg-base-100 w-full"
-            bind:value={chatGptPrompt}
-            placeholder="Enter thoughts here"
-          />
-          <div class="text-right">
-            <button type="submit" class="btn btn-primary">Generate</button>
-          </div>
-          <div class="border-accent border border-4">
-            <ImageWall></ImageWall>
-          </div>
-        </form>
+        <InterpretationList
+          interpretations={chatGptInts}
+          on:select={handleInterpretationSelect}
+          on:back={goBack}
+        />
       </main>
-    {/if}
-  {:else if chatGptInts.length > 0 && !isGeneratingBlog}
-    <main
-      class="container mx-auto my-12 px-4 sm:px-6 lg:px-8"
-      in:fly={{ y: 50, duration: 500 }}
-    >
-      <InterpretationList
-        interpretations={chatGptInts}
-        on:select={handleInterpretationSelect}
-        on:back={goBack}
-      />
-    </main>
-  {:else if isGeneratingBlog}
-    <LoadingIndicator message={loadingMessage} />
-  {:else}
-    {#key chatGptPrompt}
-      {#if post !== undefined}
-        <div
-          class="prose prose-sm sm:prose lg:prose-lg xl:prose-xl mx-auto p-4"
-          in:fly={{ y: 50, duration: 500 }}
-        >
-          {#if post.featuredImage}
+    {:else if isGeneratingBlog}
+      <LoadingIndicator message={loadingMessage} />
+    {:else}
+      {#key chatGptPrompt}
+        {#if post !== undefined}
+          <div
+            class="prose prose-sm sm:prose lg:prose-lg xl:prose-xl mx-auto p-4"
+            in:fly={{ y: 50, duration: 500 }}
+          >
             <figure class="my-4">
-              <img
-                src={post.featuredImage}
-                alt={post.title}
-                class="mx-auto rounded-lg shadow-lg transition duration-300 ease-in-out hover:scale-105"
-              />
-              <figcaption class="mt-2 text-center text-sm">
-                {post.title}
-              </figcaption>
-            </figure>
-          {/if}
-          <article class="prose lg:prose-lg mx-auto text-justify">
-            {#if isLoading.content}
-              <LoadingIndicator message="Loading content..." />
-            {:else}
-              <PostContent content={post.body} />
-            {/if}
-          </article>
+              {#if post.featuredImage}
+                <figure class="my-4">
+                  <img
+                    src={post.featuredImage}
+                    alt={post.title}
+                    class="mx-auto rounded-lg shadow-lg transition duration-300 ease-in-out hover:scale-105"
+                  />
+                  <figcaption class="mt-2 text-center text-sm">
+                    {post.title}
+                  </figcaption>
+                </figure>
+              {/if}
+              <article class="prose lg:prose-lg mx-auto text-justify">
+                {#if isLoading.content}
+                  <LoadingIndicator message="Loading content..." />
+                {:else}
+                  <PostContent content={post.body} />
+                {/if}
+              </article>
 
-          <div class="mt-8">
-            <h2 class="text-2xl">Tags</h2>
-            {#if isLoading.tags}
-              <LoadingIndicator message="Loading tags..." />
-            {:else if createdPost}
-              <TagGroup post={createdPost} />
-            {/if}
+              <div class="mt-8">
+                <h2 class="text-2xl">Tags</h2>
+                {#if isLoading.tags}
+                  <LoadingIndicator message="Loading tags..." />
+                {:else if createdPost}
+                  <TagGroup post={createdPost} />
+                {/if}
+              </div>
+            </figure>
           </div>
-        </div>
-      {/if}
-    {/key}
-  {/if}
-</div>
+        {/if}
+      {/key}
+    {/if}
+  </div>
 </LoginGuard>

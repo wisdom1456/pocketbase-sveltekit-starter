@@ -1,8 +1,8 @@
 import { s as subscribe, a as set_store_value } from "../../../chunks/utils.js";
-import { c as create_ssr_component, a as each, b as add_attribute, e as escape, v as validate_component } from "../../../chunks/ssr.js";
-import { c as client } from "../../../chunks/index.js";
-import { w as writable } from "../../../chunks/index2.js";
-import { m as metadata } from "../../../chunks/stores2.js";
+import { c as create_ssr_component, b as each, a as add_attribute, e as escape, v as validate_component } from "../../../chunks/ssr.js";
+import { c as client } from "../../../chunks/index2.js";
+import { w as writable } from "../../../chunks/index.js";
+import { m as metadata } from "../../../chunks/metadataStore.js";
 import { S as SvelteMarkdown } from "../../../chunks/SvelteMarkdown.js";
 /* empty css                                                      */import "../../../chunks/Alerts.js";
 import { L as LoginGuard } from "../../../chunks/LoginGuard.js";
@@ -78,7 +78,7 @@ const Page = create_ssr_component(($$result, $$props, $$bindings, slots) => {
   $$unsubscribe_metadata();
   return `${validate_component(LoginGuard, "LoginGuard").$$render($$result, {}, {}, {
     default: () => {
-      return `<div><div class="mx-auto max-w-7xl px-6 lg:px-8">${Array.isArray(posts) ? `<div class="grid grid-cols-1 gap-x-2 gap-y-20 overflow-y-auto lg:grid-cols-3" style="max-height: calc(100vh - 220px);">${validate_component(PostList, "PostList").$$render($$result, { posts }, {}, {})}</div>` : `<p data-svelte-h="svelte-gd33y5">Error: Posts data is not available.</p>`}</div></div>`;
+      return `<div><div class="mx-auto max-w-7xl px-6 lg:px-8">${Array.isArray(posts) ? `<div class="grid grid-cols-1 gap-x-2 gap-y-2 overflow-y-auto lg:grid-cols-3">${validate_component(PostList, "PostList").$$render($$result, { posts }, {}, {})}</div>` : `<p data-svelte-h="svelte-gd33y5">Error: Posts data is not available.</p>`}</div></div>`;
     }
   })}`;
 });

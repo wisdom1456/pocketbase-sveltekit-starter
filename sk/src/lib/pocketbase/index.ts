@@ -170,7 +170,9 @@ export function watch<T>(
               );
             case "create":
               record = await expand(queryParams.expand, record);
-              const index = result.items.findIndex((item: any) => item.id === record.id);
+              const index = result.items.findIndex(
+                (item: any) => item.id === record.id
+              );
               // replace existing if found, otherwise append
               if (index >= 0) {
                 result.items[index] = record as T;
@@ -183,7 +185,9 @@ export function watch<T>(
               break; // Use 'break' to exit the switch case after adding the item
             case "delete":
               // Filter out the deleted record from the result items array
-              result.items = result.items.filter((item) => (item as any).id !== record.id);
+              result.items = result.items.filter(
+                (item) => (item as any).id !== record.id
+              );
               break; // Use 'break' to exit the switch case after filtering the item
           }
           return result.items;

@@ -47,10 +47,10 @@ function set_store_value(store, ret, value) {
 }
 export {
   set_store_value as a,
-  safe_not_equal as b,
-  compute_slots as c,
-  blank_object as d,
-  compute_rest_props as e,
+  compute_slots as b,
+  compute_rest_props as c,
+  safe_not_equal as d,
+  blank_object as e,
   is_promise as i,
   noop as n,
   run_all as r,

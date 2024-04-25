@@ -21,7 +21,6 @@
 		"src/routes/+layout.ts"
 	],
 	"/posts": [
-		"src/routes/posts/+page.ts",
 		"src/routes/+layout.ts"
 	],
 	"/posts/[slug]": [

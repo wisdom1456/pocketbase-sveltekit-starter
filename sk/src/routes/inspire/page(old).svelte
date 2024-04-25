@@ -64,7 +64,7 @@ async function sortTags(prompt: string) {
   isLoading = true;
   try {
     treeDataJson = [await generateTagTree(tags.toString(), authModel)];
-console.log("treeDataJson", treeDataJson);
+    console.log("treeDataJson", treeDataJson);
     // Parse the response and create the tree structure
     // Update the UI with the sorted tags
   } catch (error) {

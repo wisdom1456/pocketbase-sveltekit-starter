@@ -17,7 +17,7 @@ import {
   tagPrompt,
   blogSummaryPrompt,
 } from "$lib/utils/prompts";
-    import LoginGuard from "$lib/components/LoginGuard.svelte";
+import LoginGuard from "$lib/components/LoginGuard.svelte";
 let post: PostsResponse | undefined;
 let tagString = "";
 $: slug = $page.params.slug;
@@ -124,112 +124,112 @@ async function generateFromChatGPT(userPrompt: string) {
 </script>
 
 <LoginGuard>
-<main class="container mx-auto my-12 px-4 sm:px-6 lg:px-8">
-  {#if post}
-    <div class="grid gap-8 lg:grid-cols-3">
-      <section class="space-y-6 lg:col-span-2">
-        <div class="border p-6">
-          <h2 class="mb-4 text-lg font-semibold">GPT Prompt</h2>
-          <div class="form-control">
-            <textarea
-              class="textarea h-24 w-full"
-              placeholder="Enter your GPT prompt here"
-              bind:value={post.prompt}
-            ></textarea>
-            <button
-              class="btn btn-primary mt-4"
-              on:click={() => generateFromChatGPT(post?.prompt ?? '')}
-              >Generate</button
-            >
-          </div>
-        </div>
-        <div class="border p-6">
-          <h1 class="mb-4 text-xl font-semibold">Edit Journal Entry</h1>
-          <form on:submit|preventDefault={submit} class="space-y-4">
-            <div class="form-control w-full">
-              <label class="label" for="title">
-                <span class="label-text">Title</span>
-              </label>
-              <input
-                type="text"
-                id="title"
-                name="title"
-                bind:value={post.title}
-                class="input input-bordered w-full"
-                placeholder="Your journal title"
-              />
-            </div>
-
-            <div class="form-control w-full">
-              <label class="label" for="slug">
-                <span class="label-text">Slug</span>
-              </label>
-              <input
-                type="text"
-                id="slug"
-                name="slug"
-                bind:value={post.slug}
-                class="input input-bordered w-full"
-                placeholder="your-journal-title"
-              />
-            </div>
-
-            <div class="form-control w-full">
-              <label class="label" for="body">
-                <span class="label-text">Body</span>
-              </label>
-              <article class="prose lg:prose-lg mx-auto text-justify">
-                <Markdown source={post.body} />
-              </article>
-            </div>
-
-            <div class="form-control w-full">
-              <label class="label" for="tags">
-                <span class="label-text">Tags</span>
-              </label>
-              <input
-                type="text"
-                id="tags"
-                name="tags"
-                bind:value={tagString}
-                class="input input-bordered w-full"
-                placeholder="Tags, comma separated"
-              />
-            </div>
-
-            <button type="submit" class="btn btn-primary">Update</button>
-          </form>
-        </div>
-      </section>
-
-      <aside class="space-y-4">
-        <div class="card border">
-          <figure>
-            <img
-              src={post.featuredImage || 'https://via.placeholder.com/256x256.png?text=AI+Blog'}
-              alt={post.title}
-            />
-          </figure>
-          <div class="card-body">
-            <h3 class="card-title">
-              <a href="/" class="text-lg font-bold">{post.title}</a>
-            </h3>
-            <p>{post.blogSummary || 'No summary available.'}</p>
-            <div class="card-actions justify-end">
-              {#if tagString}
-                {#each tagString.split(',') as tag (tag)}
-                  <div class="badge badge-outline">{tag.trim()}</div>
-                {/each}
-              {:else}
-                <div class="badge badge-outline">No Tags</div>
-              {/if}
+  <main class="container mx-auto my-12 px-4 sm:px-6 lg:px-8">
+    {#if post}
+      <div class="grid gap-8 lg:grid-cols-3">
+        <section class="space-y-6 lg:col-span-2">
+          <div class="border p-6">
+            <h2 class="mb-4 text-lg font-semibold">GPT Prompt</h2>
+            <div class="form-control">
+              <textarea
+                class="textarea h-24 w-full"
+                placeholder="Enter your GPT prompt here"
+                bind:value={post.prompt}
+              ></textarea>
+              <button
+                class="btn btn-primary mt-4"
+                on:click={() => generateFromChatGPT(post?.prompt ?? '')}
+                >Generate</button
+              >
             </div>
           </div>
-        </div>
-      </aside>
-    </div>
-  {:else}
-    <p>Loading post...</p>
-  {/if}
-</main>
+          <div class="border p-6">
+            <h1 class="mb-4 text-xl font-semibold">Edit Journal Entry</h1>
+            <form on:submit|preventDefault={submit} class="space-y-4">
+              <div class="form-control w-full">
+                <label class="label" for="title">
+                  <span class="label-text">Title</span>
+                </label>
+                <input
+                  type="text"
+                  id="title"
+                  name="title"
+                  bind:value={post.title}
+                  class="input input-bordered w-full"
+                  placeholder="Your journal title"
+                />
+              </div>
+
+              <div class="form-control w-full">
+                <label class="label" for="slug">
+                  <span class="label-text">Slug</span>
+                </label>
+                <input
+                  type="text"
+                  id="slug"
+                  name="slug"
+                  bind:value={post.slug}
+                  class="input input-bordered w-full"
+                  placeholder="your-journal-title"
+                />
+              </div>
+
+              <div class="form-control w-full">
+                <label class="label" for="body">
+                  <span class="label-text">Body</span>
+                </label>
+                <article class="prose mx-auto text-justify lg:prose-lg">
+                  <Markdown source={post.body} />
+                </article>
+              </div>
+
+              <div class="form-control w-full">
+                <label class="label" for="tags">
+                  <span class="label-text">Tags</span>
+                </label>
+                <input
+                  type="text"
+                  id="tags"
+                  name="tags"
+                  bind:value={tagString}
+                  class="input input-bordered w-full"
+                  placeholder="Tags, comma separated"
+                />
+              </div>
+
+              <button type="submit" class="btn btn-primary">Update</button>
+            </form>
+          </div>
+        </section>
+
+        <aside class="space-y-4">
+          <div class="card border">
+            <figure>
+              <img
+                src={post.featuredImage || 'https://via.placeholder.com/256x256.png?text=AI+Blog'}
+                alt={post.title}
+              />
+            </figure>
+            <div class="card-body">
+              <h3 class="card-title">
+                <a href="/" class="text-lg font-bold">{post.title}</a>
+              </h3>
+              <p>{post.blogSummary || 'No summary available.'}</p>
+              <div class="card-actions justify-end">
+                {#if tagString}
+                  {#each tagString.split(',') as tag (tag)}
+                    <div class="badge badge-outline">{tag.trim()}</div>
+                  {/each}
+                {:else}
+                  <div class="badge badge-outline">No Tags</div>
+                {/if}
+              </div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    {:else}
+      <p>Loading post...</p>
+    {/if}
+  </main>
 </LoginGuard>
