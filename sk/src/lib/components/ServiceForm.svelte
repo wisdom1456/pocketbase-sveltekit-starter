@@ -25,8 +25,8 @@ const services = [
 ];
 
 async function callAPI() {
-  // Emit an event with the selected service, model, and input text
-  dispatch("submit", { selectedService, selectedModel, inputText });
+  // Emit an event with the input text
+  dispatch("submit", { inputText });
 }
 </script>
 

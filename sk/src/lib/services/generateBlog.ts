@@ -68,23 +68,15 @@ export async function generateBlog(
 
     // Generate content
     post.body = await callAPI(
-      selectedService,
-      selectedModel,
       `${promptFormat}'${userInput}'`
     );
     post.title = await callAPI(
-      selectedService,
-      selectedModel,
       `${titlePrompt}'${post.body}'`
     );
     const tagString = await callAPI(
-      selectedService,
-      selectedModel,
       `${tagPrompt}'${post.body}'`
     );
     post.blogSummary = await callAPI(
-      selectedService,
-      selectedModel,
       `${blogSummaryPrompt}'${post.body}'`
     );
 
@@ -106,8 +98,6 @@ export async function generateBlog(
 
     // Generate image
     const imageResponseText = await callAPI(
-      selectedService,
-      selectedModel,
       `${imagePrompt}'${post.body}'`
     );
 
@@ -165,11 +155,9 @@ export async function generateBlogResponse(
     // Generate content and title concurrently
     const [content, title] = await Promise.all([
       callAPI(
-        selectedService,
-        selectedModel,
         `${blogResponsePrompt} + "  " + '${userInput}'`
       ),
-      callAPI(selectedService, selectedModel, `${titlePrompt}'${userInput}'`),
+      callAPI(`${titlePrompt}'${userInput}'`),
     ]);
     // Generate slug
     subpost.slug = title
@@ -204,7 +192,7 @@ export async function generateTagTree(
 
     // Generate content
     const [rawTagTree] = await Promise.all([
-      await callAPI(tempName, tempMode, `${tagTreePrompt}'${tags}'`),
+      await callAPI(`${tagTreePrompt}'${tags}'`),
     ]);
 
     // Clean the generated tagTree

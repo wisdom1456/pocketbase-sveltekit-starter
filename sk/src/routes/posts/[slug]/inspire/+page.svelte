@@ -17,6 +17,19 @@ import type { ServiceModelSelection } from "$lib/services/generateBlog";
 import { postsStore } from "$lib/stores/postStore";
 import { fetchPostBySlug } from "$lib/services/postService";
 import LoginGuard from "$lib/components/LoginGuard.svelte";
+
+
+import { fetchSubpostsByPostId } from "$lib/services/postService";
+  import type { SubpostResponse } from "$lib/pocketbase/generated-types";
+
+  let subposts: SubpostResponse[] = [];
+
+  $: if (post) {
+    fetchSubpostsByPostId(post.id).then((data: SubpostResponse[]) => {
+      subposts = data;
+    });
+  }
+
 let selectedService = availableServices[0].name;
 let selectedModel = availableServices[0].models[0];
 let post: PostsResponse | undefined;

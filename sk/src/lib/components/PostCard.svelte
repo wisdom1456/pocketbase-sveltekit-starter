@@ -1,14 +1,30 @@
 <script lang="ts">
-import type { PostsResponse } from "$lib/pocketbase/generated-types";
-import Markdown from "svelte-markdown";
-import TagGroup from "$lib/components/TagGroup.svelte";
-import Delete from "./Delete.svelte";
-import { client } from "$lib/pocketbase";
+import type { PostsResponse } from '$lib/pocketbase/generated-types';
+import Markdown from 'svelte-markdown';
+import TagGroup from '$lib/components/TagGroup.svelte';
+import Delete from './Delete.svelte';
+import { client } from '$lib/pocketbase';
 export let post: PostsResponse;
+import SubPostCard from '$lib/components/SubPostCard.svelte';
+import { onMount } from 'svelte';
+
+let subPosts: string | any[] = [];
+
+onMount(async () => {
+  // Fetch subposts for the current post
+  const subpostsResponse = await client.collection('subpost').getFullList({
+    filter: `post.id = "${post.id}"`,
+    expand: 'post',
+  });
+
+  if (subpostsResponse) {
+    subPosts = subpostsResponse;
+  }
+});
 </script>
 
 <div
-  class="border-3 card m-2 flex flex-1 flex-col justify-between border border-secondary bg-base-100 shadow-xl"
+  class="border-3 card border-secondary bg-base-100 m-2 flex flex-1 flex-col justify-between border shadow-xl"
 >
   <div>
     <figure>
@@ -38,11 +54,11 @@ export let post: PostsResponse;
       <div class="group relative px-2">
         <a
           href={`/posts/${post.slug}`}
-          class="prose-lg font-bold text-primary hover:text-secondary"
+          class="prose-lg text-primary hover:text-secondary font-bold"
         >
           {post.title}
         </a>
-        <div class="prose-sm mt-3 line-clamp-6 text-justify text-base-content">
+        <div class="prose-sm text-base-content mt-3 line-clamp-6 text-justify">
           <Markdown source={post.blogSummary} />
         </div>
       </div>
@@ -63,4 +79,14 @@ export let post: PostsResponse;
       </div>
     </div>
   </div>
+
+  <!-- Subposts section -->
+  {#if post.expand?.subpost && post.expand.subpost.length > 0}
+    <div class="subposts-container mt-4">
+      <h4 class="subposts-title font-bold">Related Subposts:</h4>
+      {#each post.expand.subpost as subpost}
+        <SubPostCard subPost={subpost} />
+      {/each}
+    </div>
+  {/if}
 </div>

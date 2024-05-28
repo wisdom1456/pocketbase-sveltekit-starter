@@ -1,7 +1,14 @@
 // lib/services/postsService.ts
-import { client } from "$lib/pocketbase";
-import { writable } from "svelte/store";
-import type { PostsResponse } from "$lib/pocketbase/generated-types";
+import { client } from '$lib/pocketbase';
+import { writable } from 'svelte/store';
+
+import { alertOnFailure } from '$lib/pocketbase/ui'; // Adjust the import path as necessary
+import type {
+  PostsResponse,
+  SubpostResponse,
+} from '$lib/pocketbase/generated-types';
+
+import { createImage } from './imageService'; // Adjust the import path as necessary
 
 async function populateFeaturedImage(
   post: PostsResponse
@@ -9,16 +16,16 @@ async function populateFeaturedImage(
   if (post.expand?.featuredImage) {
     const image = post.expand.featuredImage;
     if (
-      "file" in image &&
-      "id" in image &&
-      "collectionId" in image &&
-      "collectionName" in image
+      'file' in image &&
+      'id' in image &&
+      'collectionId' in image &&
+      'collectionName' in image
     ) {
       try {
         return client.getFileUrl(image, image.file);
       } catch (error) {
-        console.error("Error getting featured image URL:", error);
-        return "https://via.placeholder.com/800x400.png?text=cool+wind"; // Set a default image URL
+        console.error('Error getting featured image URL:', error);
+        return 'https://via.placeholder.com/800x400.png?text=cool+wind'; // Set a default image URL
       }
     }
   }
@@ -29,14 +36,14 @@ async function populateTags(post: PostsResponse): Promise<string[]> {
   if (post.expand?.tags) {
     return post.expand.tags.map((tag: { title: string }) => tag.title);
   } else if (post.tags && post.tags.length > 0) {
-    const tagIds = post.tags.map((tagId) => `id = "${tagId}"`).join(" || ");
+    const tagIds = post.tags.map((tagId) => `id = "${tagId}"`).join(' || ');
     try {
       const tags = await client
-        .collection("tags")
+        .collection('tags')
         .getFullList(undefined, { filter: tagIds });
       return tags.map((tag) => tag.title);
     } catch (error) {
-      console.error("Error fetching tags:", error);
+      console.error('Error fetching tags:', error);
       return []; // Return an empty array as a fallback
     }
   }
@@ -60,10 +67,10 @@ export async function fetchPosts(
 } | null> {
   try {
     const postsResponse = await client
-      .collection("posts")
+      .collection('posts')
       .getList<PostsResponse>(page, perPage, {
-        sort: "-updated",
-        expand: "featuredImage,tags",
+        sort: '-updated',
+        expand: 'featuredImage,tags',
       });
 
     const posts = await Promise.all(postsResponse.items.map(populatePostData));
@@ -76,7 +83,7 @@ export async function fetchPosts(
     postsStore.set(postsData);
     return postsData;
   } catch (error) {
-    console.error("Error fetching posts:", error);
+    console.error('Error fetching posts:', error);
     return null; // Return null to indicate an error occurred
   }
 }
@@ -87,35 +94,34 @@ export async function fetchPostBySlug(slug: string) {
     const encodedSlug = encodeURIComponent(slug);
 
     const postsResponse = await client
-      .collection("posts")
+      .collection('posts')
       .getFirstListItem<PostsResponse>(`slug = "${encodedSlug}"`, {
-        expand: "featuredImage,tags",
+        expand: 'featuredImage,tags',
       });
 
     const post = await populatePostData(postsResponse);
     return post;
   } catch (error) {
-    console.error("Error fetching post:", error);
+    console.error('Error fetching post:', error);
     throw error;
   }
 }
 
-// Refactored createPost function
 export async function createPost(
   postData: Partial<PostsResponse>,
   imagePrompt: string,
   engineId: string
 ): Promise<PostsResponse | null> {
-  try {
-    // Call the new createImage function
+  return await alertOnFailure(async () => {
     const imageRecordId = await createImage(imagePrompt, engineId);
+    if (imageRecordId) {
+      postData.featuredImage = imageRecordId;
+    } else {
+      throw new Error('Failed to generate image');
+    }
 
-    // Set the featuredImage field to the image record ID
-    postData.featuredImage = imageRecordId;
-
-    // Create the post record
     const createdPost = await client
-      .collection("posts")
+      .collection('posts')
       .create<PostsResponse>(postData);
     const populatedPost = await populatePostData(createdPost);
     postsStore.update((store) => {
@@ -125,26 +131,25 @@ export async function createPost(
       };
     });
     return populatedPost;
-  } catch (error) {
-    console.error("Error creating post:", error);
-    return null;
-  }
+  });
 }
 
-async function createImage(imagePrompt: string, engineId: string) {
-  const imageResponse = await fetch("/api/dreamstudio", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ prompt: imagePrompt }),
-  });
+export async function fetchSubpostsByPostId(
+  postId: string
+): Promise<SubpostResponse[]> {
+  try {
+    const subpostsResponse = await client
+      .collection('subpost')
+      .getFullList<SubpostResponse>(200, {
+        filter: `post = "${postId}"`,
+        expand: 'post',
+      });
 
-  if (!imageResponse.ok) {
-    throw new Error("Failed to upload image");
+    return subpostsResponse;
+  } catch (error) {
+    console.error('Error fetching subposts:', error);
+    throw error;
   }
-
-  const imageData = await imageResponse.json();
-  console.log("Image data:", imageData);
-  return imageData.id;
 }
 
 export async function updatePost(
@@ -153,7 +158,7 @@ export async function updatePost(
 ): Promise<PostsResponse | null> {
   try {
     const updatedPost = await client
-      .collection("posts")
+      .collection('posts')
       .update<PostsResponse>(postId, postData);
     const populatedPost = await populatePostData(updatedPost);
     postsStore.update((store) => {
@@ -167,14 +172,14 @@ export async function updatePost(
     });
     return populatedPost;
   } catch (error) {
-    console.error("Error updating post:", error);
+    console.error('Error updating post:', error);
     return null; // Return null to indicate an error occurred
   }
 }
 
 export async function deletePost(postId: string): Promise<boolean> {
   try {
-    await client.collection("posts").delete(postId);
+    await client.collection('posts').delete(postId);
     postsStore.update((store) => {
       return {
         ...store,
@@ -183,7 +188,7 @@ export async function deletePost(postId: string): Promise<boolean> {
     });
     return true; // Return true to indicate successful deletion
   } catch (error) {
-    console.error("Error deleting post:", error);
+    console.error('Error deleting post:', error);
     return false; // Return false to indicate an error occurred
   }
 }

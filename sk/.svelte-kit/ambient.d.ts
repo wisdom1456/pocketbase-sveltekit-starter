@@ -32,6 +32,7 @@ declare module '$env/static/private' {
 	export const VITE_CHATGPT_API_KEY: string;
 	export const VITE_STABILITY_API_KEY: string;
 	export const VITE_STABILITY_API_HOST: string;
+	export const VITE_PUBLIC_API_URL: string;
 	export const ACSetupSvcPort: string;
 	export const ACSvcPort: string;
 	export const ALLUSERSPROFILE: string;
@@ -43,7 +44,7 @@ declare module '$env/static/private' {
 	export const COMPUTERNAME: string;
 	export const ComSpec: string;
 	export const DriverData: string;
-	export const EFC_1948: string;
+	export const EFC_6496: string;
 	export const EnableLog: string;
 	export const FPS_BROWSER_APP_PROFILE_STRING: string;
 	export const FPS_BROWSER_USER_PROFILE_STRING: string;
@@ -198,6 +199,7 @@ declare module '$env/dynamic/private' {
 		VITE_CHATGPT_API_KEY: string;
 		VITE_STABILITY_API_KEY: string;
 		VITE_STABILITY_API_HOST: string;
+		VITE_PUBLIC_API_URL: string;
 		ACSetupSvcPort: string;
 		ACSvcPort: string;
 		ALLUSERSPROFILE: string;
@@ -209,7 +211,7 @@ declare module '$env/dynamic/private' {
 		COMPUTERNAME: string;
 		ComSpec: string;
 		DriverData: string;
-		EFC_1948: string;
+		EFC_6496: string;
 		EnableLog: string;
 		FPS_BROWSER_APP_PROFILE_STRING: string;
 		FPS_BROWSER_USER_PROFILE_STRING: string;

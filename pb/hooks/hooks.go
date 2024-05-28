@@ -145,7 +145,7 @@ func DoDalle3(apiKey, prompt, model, size string) (string, error) {
 	if len(respBody.Data) == 0 {
 		return "", fmt.Errorf("response data array is empty")
 	}
-	
+
 	b64Data, ok := respBody.Data[0]["b64_json"].(string)
 	if !ok {
 		return "", fmt.Errorf("base64 image data not found in response")
@@ -239,11 +239,11 @@ func processTagsForPost(db *pocketbase.PocketBase, postID string, tagsStr string
 	tags := strings.Split(tagsStr, ",")
 	uniqueTags := make(map[string]bool)
 	for _, tag := range tags {
-			// Trim spaces and ensure tag is lowercase for consistency
-			cleanTag := strings.ToLower(strings.TrimSpace(tag))
-			if cleanTag != "" {
-					uniqueTags[cleanTag] = true
-			}
+		// Trim spaces and ensure tag is lowercase for consistency
+		cleanTag := strings.ToLower(strings.TrimSpace(tag))
+		if cleanTag != "" {
+			uniqueTags[cleanTag] = true
+		}
 	}
 
 	// Here you would interact with your database to find existing tags,
