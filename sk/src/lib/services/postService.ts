@@ -3,6 +3,7 @@ import { client } from '$lib/pocketbase';
 import { writable } from 'svelte/store';
 
 import { alertOnFailure } from '$lib/pocketbase/ui'; // Adjust the import path as necessary
+import { alerts } from '$lib/components/Alerts.svelte';
 import type {
   PostsResponse,
   SubpostResponse,
@@ -56,35 +57,17 @@ async function populatePostData(post: PostsResponse): Promise<PostsResponse> {
   return { ...post, featuredImage, tags };
 }
 
-export async function fetchPosts(
-  page = 1,
-  perPage = 20
-): Promise<{
-  posts: PostsResponse[];
-  page: number;
-  perPage: number;
-  totalPages: number;
-} | null> {
+export async function fetchPosts(page: number = 1, perPage: number = 20): Promise<PostsResponse[]> {
   try {
-    const postsResponse = await client
-      .collection('posts')
-      .getList<PostsResponse>(page, perPage, {
-        sort: '-updated',
-        expand: 'featuredImage,tags',
-      });
-
-    const posts = await Promise.all(postsResponse.items.map(populatePostData));
-    const postsData = {
-      posts: posts,
-      page: postsResponse.page,
-      perPage: postsResponse.perPage,
-      totalPages: postsResponse.totalPages,
-    };
-    postsStore.set(postsData);
-    return postsData;
+    const result = await client.collection('posts').getList<PostsResponse>(page, perPage, {
+      sort: '-updated',
+      expand: 'featuredImage,tags'
+    });
+    return result.items;
   } catch (error) {
     console.error('Error fetching posts:', error);
-    return null; // Return null to indicate an error occurred
+    alerts.error('Failed to fetch posts. Please try again.');
+    return [];
   }
 }
 

@@ -4,3 +4,5 @@
 .env
 .ash_history
 /docker-compose.override.yml
+directory_contents_filtered_debug.txt
+sk/src/lib/directory_contents_filtered_debug.txt

@@ -345,7 +345,6 @@
       "_ssr.js",
       "_stores.js",
       "_index2.js",
-      "_Alerts.js",
       "_LoginGuard.js"
     ],
     "isEntry": true,
