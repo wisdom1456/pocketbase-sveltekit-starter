@@ -48,7 +48,7 @@ export type PostsRecord = {
 	featuredImage?: RecordIdString
 	prompt?: string
 	userid?: RecordIdString
-	tags?: RecordIdString
+	tags?: string[]
 }
 
 export type SubpostRecord = {

@@ -1,13 +1,17 @@
 <script lang="ts">
-import type { PostsResponse } from "$lib/pocketbase/generated-types";
-import PostCard from "$lib/components/PostCard.svelte";
-export let posts: PostsResponse[] = [];
+  import type { PostsResponse } from '$lib/pocketbase/generated-types';
+  import PostCard from './PostCard.svelte';
+
+  export let posts: PostsResponse[];
+
+  // Ensure posts array is received correctly
+  console.log('Received posts in PostList:', posts);
 </script>
 
-{#if Array.isArray(posts)}
+{#if posts && posts.length > 0}
   {#each posts as post (post.id)}
-    <PostCard post={post} />
+    <PostCard {post} />
   {/each}
 {:else}
-  <p>Error: Posts data is not available.</p>
+  <p>No posts available.</p>
 {/if}

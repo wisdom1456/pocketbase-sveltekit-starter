@@ -6,7 +6,26 @@ import "../../../chunks/Alerts.js";
 import { S as SvelteMarkdown } from "../../../chunks/SvelteMarkdown.js";
 import { w as writable } from "../../../chunks/index.js";
 import { L as LoginGuard } from "../../../chunks/LoginGuard.js";
-const postsStore = writable([]);
+function createPostsStore() {
+  const { subscribe: subscribe2, set, update } = writable({
+    posts: [],
+    page: 1,
+    perPage: 20,
+    totalPages: 1
+  });
+  return {
+    subscribe: subscribe2,
+    set,
+    update,
+    appendPosts: (newPosts, totalPages) => update((store) => ({
+      ...store,
+      posts: [...store.posts, ...newPosts],
+      totalPages
+    })),
+    reset: () => set({ posts: [], page: 1, perPage: 20, totalPages: 1 })
+  };
+}
+const postsStore = createPostsStore();
 const Page = create_ssr_component(($$result, $$props, $$bindings, slots) => {
   let $$unsubscribe_postsStore;
   let $metadata, $$unsubscribe_metadata;
