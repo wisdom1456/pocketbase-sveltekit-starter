@@ -13,8 +13,6 @@
 
   async function fetchSubPosts() {
     try {
-      await client.admins.authWithPassword('admin@example.com', 'admin_password'); // Replace with actual credentials
-
       const subpostsResponse = await client.collection('subpost').getList(1, 50, {
         filter: `post="${post.id}"`,
         expand: 'post',

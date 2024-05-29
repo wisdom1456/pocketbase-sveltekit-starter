@@ -46,8 +46,6 @@ declare module '$env/static/private' {
 	export const DriverData: string;
 	export const EFC_6496: string;
 	export const EnableLog: string;
-	export const FPS_BROWSER_APP_PROFILE_STRING: string;
-	export const FPS_BROWSER_USER_PROFILE_STRING: string;
 	export const GIT_ASKPASS: string;
 	export const GOPATH: string;
 	export const HOME: string;
@@ -213,8 +211,6 @@ declare module '$env/dynamic/private' {
 		DriverData: string;
 		EFC_6496: string;
 		EnableLog: string;
-		FPS_BROWSER_APP_PROFILE_STRING: string;
-		FPS_BROWSER_USER_PROFILE_STRING: string;
 		GIT_ASKPASS: string;
 		GOPATH: string;
 		HOME: string;

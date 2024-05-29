@@ -33,7 +33,7 @@
 <LoginGuard>
   <div class="container mx-auto p-6">
     {#if posts.length > 0}
-      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
         <PostList {posts} />
       </div>
     {:else}
