@@ -16,7 +16,7 @@ const ImageWall = create_ssr_component(($$result, $$props, $$bindings, slots) =>
     updateImageWallList(images);
   }
   return `<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">${each(imageWallList, (pic) => {
-    return `<img${add_attribute("src", pic, 0)} alt="Image" class="h-auto w-full">`;
+    return `<img${add_attribute("src", pic, 0)} alt="Wall of images" class="h-auto w-full">`;
   })} </div>`;
 });
 function updateProgressBar(step) {

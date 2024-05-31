@@ -1,65 +1,77 @@
 <script lang="ts">
-  import type { PostsResponse } from '$lib/pocketbase/generated-types';
+  import type { PostsResponse, SubpostResponse } from '$lib/pocketbase/generated-types';
   import Markdown from 'svelte-markdown';
   import TagGroup from '$lib/components/TagGroup.svelte';
   import { client } from '$lib/pocketbase';
-  import SubPostCard from '$lib/components/SubPostCard.svelte';
   import { onMount } from 'svelte';
+  import { fetchSubpostsByPostId } from '$lib/services/postService';
 
   export let post: PostsResponse;
 
-  let subPosts: any[] = [];
+  let subposts: SubpostResponse[] = [];
   let errorMessage: string = '';
 
   async function fetchSubPosts() {
     try {
-      const subpostsResponse = await client.collection('subpost').getList(1, 50, {
-        filter: `post="${post.id}"`,
-        expand: 'post',
-        autoCancel: false
-      });
+      // Post ID to filter subposts
+      const postID = post.id;
+      console.log('Post ID:', postID);
 
-      subPosts = subpostsResponse.items;
-    } catch (error: unknown) {
-      console.error('Error fetching subposts:', error);
-      if (error instanceof Error) {
-        errorMessage = error.message;
-      } else if (typeof error === 'string') {
-        errorMessage = error;
-      } else {
-        errorMessage = 'An unknown error occurred';
-      }
+      // Fetch subposts using the imported function
+      subposts = await fetchSubpostsByPostId(postID);
+      console.log('Filtered Subposts:', subposts);
+
+      //subposts = subpostsResponse;
+    } catch (error) {
+      console.error('Failed to fetch subposts:', error);
+      errorMessage = 'Failed to load subposts';
     }
   }
 
   onMount(() => {
-    if (post && post.id) {
+    if (post?.id) {
       fetchSubPosts();
     }
   });
 </script>
 
-<div class="card border border-secondary bg-base-100 m-4 flex flex-col justify-between shadow-xl">
+<div
+  class="card border-secondary bg-base-100 m-4 flex flex-col justify-between border shadow-xl"
+>
   <figure class="w-full">
     {#if post.expand?.featuredImage}
       {@const imageRecord = post.expand.featuredImage}
-      {@const imageUrl = imageRecord && imageRecord.file ? client.getFileUrl(imageRecord, imageRecord.file) : ''}
-      <img src={imageUrl} alt={post.title} class="aspect-[16/9] w-full rounded-t-lg object-cover sm:aspect-[2/1] lg:aspect-[3/2]" />
+      {@const imageUrl = imageRecord?.file ? client.getFileUrl(imageRecord, imageRecord.file) : ''}
+      <img
+        src={imageUrl}
+        alt={post.title}
+        class="aspect-[16/9] w-full rounded-t-lg object-cover sm:aspect-[2/1] lg:aspect-[3/2]"
+      />
     {:else}
-      <img src="https://via.placeholder.com/800x400.png?text=AI+Blog" alt="Placeholder" class="aspect-[16/9] w-full rounded-t-lg object-cover sm:aspect-[2/1] lg:aspect-[3/2]" />
+      <img
+        src="https://via.placeholder.com/800x400.png?text=AI+Blog"
+        alt="Placeholder"
+        class="aspect-[16/9] w-full rounded-t-lg object-cover sm:aspect-[2/1] lg:aspect-[3/2]"
+      />
     {/if}
   </figure>
   <div class="p-4">
     <div class="prose items-center">
-      {#if post && post.updated}
-        <time datetime={post.updated} class="text-accent">{new Date(post.updated).toLocaleDateString()}</time>
+      {#if post?.updated}
+        <time datetime={post.updated} class="text-accent"
+          >{new Date(post.updated).toLocaleDateString()}</time
+        >
       {/if}
     </div>
     <div class="group relative px-2">
-      {#if post && post.title}
-        <a href={`/posts/${post.slug}`} class="prose-lg text-primary hover:text-secondary font-bold">{post.title}</a>
+      {#if post?.title}
+        <a
+          href={`/posts/${post.slug}`}
+          class="prose-lg text-primary hover:text-secondary font-bold"
+          >{post.title}</a
+        >
       {/if}
-      {#if post && post.blogSummary}
+      {#if post?.blogSummary}
         <div class="prose-sm text-base-content mt-3 line-clamp-6 text-justify">
           <Markdown source={post.blogSummary} />
         </div>
@@ -67,28 +79,26 @@
     </div>
   </div>
   <div class="p-4">
-    <TagGroup {post} />
+    <TagGroup post={post} />
     <div class="card-actions mt-4 justify-between">
       <a class="btn btn-outline" href={`/posts/${post.slug}/edit`}>Edit</a>
       <a class="btn btn-outline" href={`/posts/${post.slug}/inspire`}>Inspire</a>
-      <a class="btn btn-outline btn-secondary" href={`/posts/${post.slug}#delete`}>Delete</a>
+      <a
+        class="btn btn-outline btn-secondary"
+        href={`/posts/${post.slug}#delete`}>Delete</a>
     </div>
   </div>
 
-  {#if errorMessage}
-    <div class="error-message text-red-500 p-4">
-      <p>Error loading subposts: {errorMessage}</p>
-    </div>
-  {/if}
-
-  {#if subPosts.length > 0}
-    <div class="subposts-container mt-4 p-4">
-      <h4 class="subposts-title font-bold">Related Subposts:</h4>
-      <div class="grid grid-cols-1 gap-4">
-        {#each subPosts as subPost (subPost.id)}
-          <SubPostCard {subPost} />
+  <div class="p-4">
+    {#if subposts.length > 0}
+      <h3 class="text-lg font-semibold mt-4">Subposts</h3>
+      <ul class="list-none p-0">
+        {#each subposts as subpost}
+          <li class="m-1">
+            <a href={`/subpost/${subpost.id}`} class="text-sm link link-primary">{subpost.title}</a>
+          </li>
         {/each}
-      </div>
-    </div>
-  {/if}
+      </ul>
+    {/if}
+  </div>
 </div>

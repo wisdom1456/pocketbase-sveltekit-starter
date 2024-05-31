@@ -38,8 +38,10 @@ $metadata.description = "AI powered note taking";
 let posts: PostsResponse[] = [];
 
 onMount(async () => {
-  await fetchPosts();
-  posts = $postsStore;
+  const response = await fetchPosts();
+  if (response) {
+    posts = response;
+  }
 });
 </script>
 

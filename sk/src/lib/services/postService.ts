@@ -3,13 +3,23 @@ import { client } from '$lib/pocketbase';
 import { writable } from 'svelte/store';
 import { alertOnFailure } from '$lib/pocketbase/ui'; // Adjust the import path as necessary
 import { createImage } from './imageService'; // Adjust the import path as necessary
-import type { PostsResponse, SubpostResponse } from '$lib/pocketbase/generated-types';
+import type {
+  PostsResponse,
+  SubpostResponse,
+} from '$lib/pocketbase/generated-types';
 
 // Utility function to populate featured image URL
-async function populateFeaturedImage(post: PostsResponse): Promise<string | undefined> {
+async function populateFeaturedImage(
+  post: PostsResponse
+): Promise<string | undefined> {
   if (post.expand?.featuredImage) {
     const image = post.expand.featuredImage;
-    if ('file' in image && 'id' in image && 'collectionId' in image && 'collectionName' in image) {
+    if (
+      'file' in image &&
+      'id' in image &&
+      'collectionId' in image &&
+      'collectionName' in image
+    ) {
       try {
         return client.getFileUrl(image, image.file);
       } catch (error) {
@@ -28,7 +38,9 @@ async function populateTags(post: PostsResponse): Promise<string[]> {
   } else if (Array.isArray(post.tags) && post.tags.length > 0) {
     const tagIds = post.tags.map((tagId) => `id = "${tagId}"`).join(' || ');
     try {
-      const tags = await client.collection('tags').getFullList(undefined, { filter: tagIds });
+      const tags = await client
+        .collection('tags')
+        .getFullList(undefined, { filter: tagIds });
       return tags.map((tag) => tag.title);
     } catch (error) {
       console.error('Error fetching tags:', error);
@@ -80,12 +92,14 @@ export const postsStore = createPostsStore();
 // lib/services/postService.ts
 
 // Function to fetch posts and update the global posts store
-export async function fetchPosts() {
+export async function fetchPosts(): Promise<PostsResponse[] | undefined> {
   try {
-    const response = await client.collection('posts').getList<PostsResponse>(1, 20, {
-      sort: '-updated',
-      expand: 'featuredImage,tags',
-    });
+    const response = await client
+      .collection('posts')
+      .getList<PostsResponse>(1, 20, {
+        sort: '-updated',
+        expand: 'featuredImage,tags',
+      });
 
     // Debug: Log the fetched posts
     console.log('Fetched posts:', response.items);
@@ -96,19 +110,22 @@ export async function fetchPosts() {
       perPage: response.perPage,
       totalPages: response.totalPages,
     });
+
+    return response.items;
   } catch (error) {
     console.error('Failed to fetch posts:', error);
   }
 }
 
-
 // Fetch a post by its slug
 export async function fetchPostBySlug(slug: string): Promise<PostsResponse> {
   try {
     const encodedSlug = encodeURIComponent(slug);
-    const postResponse = await client.collection('posts').getFirstListItem<PostsResponse>(`slug = "${encodedSlug}"`, {
-      expand: 'featuredImage,tags',
-    });
+    const postResponse = await client
+      .collection('posts')
+      .getFirstListItem<PostsResponse>(`slug = "${encodedSlug}"`, {
+        expand: 'featuredImage,tags',
+      });
 
     return await populatePostData(postResponse);
   } catch (error) {
@@ -118,7 +135,11 @@ export async function fetchPostBySlug(slug: string): Promise<PostsResponse> {
 }
 
 // Create a new post
-export async function createPost(postData: Partial<PostsResponse>, imagePrompt: string, engineId: string): Promise<PostsResponse | null> {
+export async function createPost(
+  postData: Partial<PostsResponse>,
+  imagePrompt: string,
+  engineId: string
+): Promise<PostsResponse | null> {
   return await alertOnFailure(async () => {
     const imageRecordId = await createImage(imagePrompt, engineId);
     if (imageRecordId) {
@@ -127,7 +148,9 @@ export async function createPost(postData: Partial<PostsResponse>, imagePrompt: 
       throw new Error('Failed to generate image');
     }
 
-    const createdPost = await client.collection('posts').create<PostsResponse>(postData);
+    const createdPost = await client
+      .collection('posts')
+      .create<PostsResponse>(postData);
     const populatedPost = await populatePostData(createdPost);
     postsStore.update((store) => ({
       ...store,
@@ -140,22 +163,33 @@ export async function createPost(postData: Partial<PostsResponse>, imagePrompt: 
 // Fetch subposts by post ID
 export async function fetchSubpostsByPostId(postId: string): Promise<SubpostResponse[]> {
   try {
+    if (!postId) throw new Error('Post ID is required');
+    
+    // Example of disabling auto-cancellation or increasing timeout
     const subpostsResponse = await client.collection('subpost').getFullList<SubpostResponse>(200, {
       filter: `post = "${postId}"`,
       expand: 'post',
+      // You can disable auto-cancellation here if possible or increase the timeout
+      $autoCancel: false,  // This depends on the Pocketbase client configuration
+      // timeout: 60000,     // Example of increasing timeout
     });
 
     return subpostsResponse;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching subposts:', error);
-    throw error;
+    throw new Error(`Failed to fetch subposts for post ID ${postId}: ${error.message}`);
   }
 }
 
 // Update a post
-export async function updatePost(postId: string, postData: Partial<PostsResponse>): Promise<PostsResponse | null> {
+export async function updatePost(
+  postId: string,
+  postData: Partial<PostsResponse>
+): Promise<PostsResponse | null> {
   try {
-    const updatedPost = await client.collection('posts').update<PostsResponse>(postId, postData);
+    const updatedPost = await client
+      .collection('posts')
+      .update<PostsResponse>(postId, postData);
     const populatedPost = await populatePostData(updatedPost);
     postsStore.update((store) => {
       const index = store.posts.findIndex((post) => post.id === postId);

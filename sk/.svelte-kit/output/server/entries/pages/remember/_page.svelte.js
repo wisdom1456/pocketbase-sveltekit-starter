@@ -49,25 +49,17 @@ function createPostsStore() {
   };
 }
 const postsStore = createPostsStore();
-const SubPostCard = create_ssr_component(($$result, $$props, $$bindings, slots) => {
-  let { subPost } = $$props;
-  let subPostTitle = subPost.title;
-  let subPostContent = subPost.content;
-  if ($$props.subPost === void 0 && $$bindings.subPost && subPost !== void 0)
-    $$bindings.subPost(subPost);
-  return `<div class="subpost-card border rounded shadow p-4 mb-4"><h3 class="font-semibold text-lg mb-2">${escape(subPostTitle)}</h3> <p>${escape(subPostContent)}</p> </div>`;
-});
 const PostCard = create_ssr_component(($$result, $$props, $$bindings, slots) => {
   let { post } = $$props;
-  let subPosts = [];
+  let subposts = [];
   if ($$props.post === void 0 && $$bindings.post && post !== void 0)
     $$bindings.post(post);
-  return `<div class="card border border-secondary bg-base-100 m-4 flex flex-col justify-between shadow-xl"><figure class="w-full">${post.expand?.featuredImage ? (() => {
-    let imageRecord = post.expand.featuredImage, imageUrl = imageRecord && imageRecord.file ? client.getFileUrl(imageRecord, imageRecord.file) : "";
+  return `<div class="card border-secondary bg-base-100 m-4 flex flex-col justify-between border shadow-xl"><figure class="w-full">${post.expand?.featuredImage ? (() => {
+    let imageRecord = post.expand.featuredImage, imageUrl = imageRecord?.file ? client.getFileUrl(imageRecord, imageRecord.file) : "";
     return `  <img${add_attribute("src", imageUrl, 0)}${add_attribute("alt", post.title, 0)} class="aspect-[16/9] w-full rounded-t-lg object-cover sm:aspect-[2/1] lg:aspect-[3/2]">`;
-  })() : `<img src="https://via.placeholder.com/800x400.png?text=AI+Blog" alt="Placeholder" class="aspect-[16/9] w-full rounded-t-lg object-cover sm:aspect-[2/1] lg:aspect-[3/2]">`}</figure> <div class="p-4"><div class="prose items-center">${post && post.updated ? `<time${add_attribute("datetime", post.updated, 0)} class="text-accent">${escape(new Date(post.updated).toLocaleDateString())}</time>` : ``}</div> <div class="group relative px-2">${post && post.title ? `<a${add_attribute("href", `/posts/${post.slug}`, 0)} class="prose-lg text-primary hover:text-secondary font-bold">${escape(post.title)}</a>` : ``} ${post && post.blogSummary ? `<div class="prose-sm text-base-content mt-3 line-clamp-6 text-justify">${validate_component(SvelteMarkdown, "Markdown").$$render($$result, { source: post.blogSummary }, {}, {})}</div>` : ``}</div></div> <div class="p-4">${validate_component(TagGroup, "TagGroup").$$render($$result, { post }, {}, {})} <div class="card-actions mt-4 justify-between"><a class="btn btn-outline"${add_attribute("href", `/posts/${post.slug}/edit`, 0)}>Edit</a> <a class="btn btn-outline"${add_attribute("href", `/posts/${post.slug}/inspire`, 0)}>Inspire</a> <a class="btn btn-outline btn-secondary"${add_attribute("href", `/posts/${post.slug}#delete`, 0)}>Delete</a></div></div> ${``} ${subPosts.length > 0 ? `<div class="subposts-container mt-4 p-4"><h4 class="subposts-title font-bold" data-svelte-h="svelte-7a1b44">Related Subposts:</h4> <div class="grid grid-cols-1 gap-4">${each(subPosts, (subPost) => {
-    return `${validate_component(SubPostCard, "SubPostCard").$$render($$result, { subPost }, {}, {})}`;
-  })}</div></div>` : ``}</div>`;
+  })() : `<img src="https://via.placeholder.com/800x400.png?text=AI+Blog" alt="Placeholder" class="aspect-[16/9] w-full rounded-t-lg object-cover sm:aspect-[2/1] lg:aspect-[3/2]">`}</figure> <div class="p-4"><div class="prose items-center">${post?.updated ? `<time${add_attribute("datetime", post.updated, 0)} class="text-accent">${escape(new Date(post.updated).toLocaleDateString())}</time>` : ``}</div> <div class="group relative px-2">${post?.title ? `<a${add_attribute("href", `/posts/${post.slug}`, 0)} class="prose-lg text-primary hover:text-secondary font-bold">${escape(post.title)}</a>` : ``} ${post?.blogSummary ? `<div class="prose-sm text-base-content mt-3 line-clamp-6 text-justify">${validate_component(SvelteMarkdown, "Markdown").$$render($$result, { source: post.blogSummary }, {}, {})}</div>` : ``}</div></div> <div class="p-4">${validate_component(TagGroup, "TagGroup").$$render($$result, { post }, {}, {})} <div class="card-actions mt-4 justify-between"><a class="btn btn-outline"${add_attribute("href", `/posts/${post.slug}/edit`, 0)}>Edit</a> <a class="btn btn-outline"${add_attribute("href", `/posts/${post.slug}/inspire`, 0)}>Inspire</a> <a class="btn btn-outline btn-secondary"${add_attribute("href", `/posts/${post.slug}#delete`, 0)}>Delete</a></div></div> <div class="p-4">${subposts.length > 0 ? `<h3 class="text-lg font-semibold mt-4" data-svelte-h="svelte-16m33i4">Subposts</h3> <ul class="list-none p-0">${each(subposts, (subpost) => {
+    return `<li class="m-1"><a${add_attribute("href", `/subpost/${subpost.id}`, 0)} class="text-sm link link-primary">${escape(subpost.title)}</a> </li>`;
+  })}</ul>` : ``}</div></div>`;
 });
 const PostList = create_ssr_component(($$result, $$props, $$bindings, slots) => {
   let { posts } = $$props;
@@ -91,7 +83,7 @@ const Page = create_ssr_component(($$result, $$props, $$bindings, slots) => {
   $$unsubscribe_metadata();
   return `${validate_component(LoginGuard, "LoginGuard").$$render($$result, {}, {}, {
     default: () => {
-      return `<div class="container mx-auto p-6">${posts.length > 0 ? `<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">${validate_component(PostList, "PostList").$$render($$result, { posts }, {}, {})}</div>` : `<p class="text-center" data-svelte-h="svelte-1x8h4oj">No posts available.</p>`}</div>`;
+      return `<div class="container mx-auto p-6">${posts.length > 0 ? `<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">${validate_component(PostList, "PostList").$$render($$result, { posts }, {}, {})}</div>` : `<p class="text-center" data-svelte-h="svelte-1x8h4oj">No posts available.</p>`}</div>`;
     }
   })}`;
 });

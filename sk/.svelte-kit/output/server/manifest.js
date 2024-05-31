@@ -10,7 +10,7 @@ return {
 	assets: new Set(["android-chrome-192x192.png","android-chrome-512x512.png","apple-touch-icon.png","favicon-16x16.png","favicon-32x32.png","favicon.ico","img/advocate.png","img/analytical.png","img/cave.png","img/creative.png","img/leaf.png","img/logo_large.jpg","img/mindgarden.png","img/mountain.png","img/optimistic.png","img/pessimistic.png","img/realistic.png","img/thoughts.png","img/treeBrain.png","img/waterfall.png","site.webmanifest"]),
 	mimeTypes: {".png":"image/png",".jpg":"image/jpeg",".webmanifest":"application/manifest+json"},
 	_: {
-		client: {"start":"_app/immutable/entry/start.02b5a424.js","app":"_app/immutable/entry/app.462fea60.js","imports":["_app/immutable/entry/start.02b5a424.js","_app/immutable/chunks/scheduler.c76fa77e.js","_app/immutable/chunks/singletons.322b0c73.js","_app/immutable/chunks/index.b36f6ad1.js","_app/immutable/entry/app.462fea60.js","_app/immutable/chunks/scheduler.c76fa77e.js","_app/immutable/chunks/index.315486b9.js"],"stylesheets":[],"fonts":[]},
+		client: {"start":"_app/immutable/entry/start.b34aee1b.js","app":"_app/immutable/entry/app.464d12b3.js","imports":["_app/immutable/entry/start.b34aee1b.js","_app/immutable/chunks/scheduler.c76fa77e.js","_app/immutable/chunks/singletons.d30dba1f.js","_app/immutable/chunks/index.b36f6ad1.js","_app/immutable/entry/app.464d12b3.js","_app/immutable/chunks/scheduler.c76fa77e.js","_app/immutable/chunks/index.315486b9.js"],"stylesheets":[],"fonts":[]},
 		nodes: [
 			__memo(() => import('./nodes/0.js')),
 			__memo(() => import('./nodes/1.js')),

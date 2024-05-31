@@ -4,32 +4,9 @@ import { m as metadata } from "../../../chunks/metadataStore.js";
 import { c as client } from "../../../chunks/index2.js";
 import "../../../chunks/Alerts.js";
 import { S as SvelteMarkdown } from "../../../chunks/SvelteMarkdown.js";
-import { w as writable } from "../../../chunks/index.js";
 import { L as LoginGuard } from "../../../chunks/LoginGuard.js";
-function createPostsStore() {
-  const { subscribe: subscribe2, set, update } = writable({
-    posts: [],
-    page: 1,
-    perPage: 20,
-    totalPages: 1
-  });
-  return {
-    subscribe: subscribe2,
-    set,
-    update,
-    appendPosts: (newPosts, totalPages) => update((store) => ({
-      ...store,
-      posts: [...store.posts, ...newPosts],
-      totalPages
-    })),
-    reset: () => set({ posts: [], page: 1, perPage: 20, totalPages: 1 })
-  };
-}
-const postsStore = createPostsStore();
 const Page = create_ssr_component(($$result, $$props, $$bindings, slots) => {
-  let $$unsubscribe_postsStore;
   let $metadata, $$unsubscribe_metadata;
-  $$unsubscribe_postsStore = subscribe(postsStore, (value) => value);
   $$unsubscribe_metadata = subscribe(metadata, (value) => $metadata = value);
   async function getFeaturedImageUrl(post) {
     if (post.featuredImage) {
@@ -43,7 +20,6 @@ const Page = create_ssr_component(($$result, $$props, $$bindings, slots) => {
   set_store_value(metadata, $metadata.title = "AI powered note taking", $metadata);
   set_store_value(metadata, $metadata.description = "AI powered note taking", $metadata);
   let posts = [];
-  $$unsubscribe_postsStore();
   $$unsubscribe_metadata();
   return `${validate_component(LoginGuard, "LoginGuard").$$render($$result, {}, {}, {
     default: () => {

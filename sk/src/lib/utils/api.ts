@@ -43,7 +43,7 @@ export const availableServices = [
   },
   {
     name: "OpenAI",
-    models: ["gpt-4-turbo-preview", "gpt-3.5-turbo"],
+    models: ["gpt-4o", "gpt-4-turbo-preview", "gpt-3.5-turbo"],
   },
   {
     name: "DreamStudio",

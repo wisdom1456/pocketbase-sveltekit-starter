@@ -27,7 +27,7 @@
   
   <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
     {#each imageWallList as pic}
-      <img src={pic} alt="Image" class="h-auto w-full" />
+      <img src={pic} alt="Wall of images" class="h-auto w-full" />
     {/each}
   </div>
   
