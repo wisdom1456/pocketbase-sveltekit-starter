@@ -1,39 +1,34 @@
 <script lang="ts">
-import { fade, scale } from "svelte/transition";
-import type { PostsResponse } from "$lib/pocketbase/generated-types";
-export let post: PostsResponse;
-export let tags: string[] = [];
-$: {
-  if (post && post.tags) {
-    tags = post.tags;
+  import type { PostsResponse } from "$lib/pocketbase/generated-types";
+
+  export let post: PostsResponse;
+  export let tags: string[] = post.tags || [];
+
+  $: if (post && post.expand && post.expand.tags) {
+    tags = post.expand.tags.map((tag: { title: string }) => tag.title);
   }
-}
 </script>
 
 {#if tags.length > 0}
-  <div class="flex flex-wrap pb-2 pt-4" in:fade={{ duration: 400 }}>
+  <div class="flex flex-wrap pb-2 pt-4">
     {#each tags as tag, i (tag)}
-      {#if i < 2}
-        <a
-          href={`/tags/${tag}`}
-          class="tag hover:bg-primary-focus mb-2 mr-2 inline-block cursor-pointer bg-primary-content px-2 py-1 text-sm text-accent"
-          in:scale={{ delay: i * 100, duration: 500 }}
-          out:fade={{ duration: 300 }}
-        >
-          #{tag}
-        </a>
-      {/if}
+      <a
+        href={`/tags/${tag}`}
+        class="tag hover:bg-primary-focus mb-2 mr-2 inline-block cursor-pointer bg-primary-content px-2 py-1 text-sm text-accent"
+      >
+        #{tag}
+      </a>
     {/each}
   </div>
 {:else}
-  <div class="px-6 pb-2 pt-4 text-sm font-semibold" in:fade={{ duration: 400 }}>
+  <div class="px-6 pb-2 pt-4 text-sm font-semibold">
     No tags
   </div>
 {/if}
 
 <style>
-.tag:hover {
-  transform: translateY(-5px);
-  transition: transform 0.3s ease;
-}
+  .tag:hover {
+    transform: translateY(-5px);
+    transition: transform 0.3s ease;
+  }
 </style>

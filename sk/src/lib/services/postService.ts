@@ -5,7 +5,7 @@ import { alertOnFailure } from '$lib/pocketbase/ui'; // Adjust the import path a
 import { createImage } from './imageService'; // Adjust the import path as necessary
 import type {
   PostsResponse,
-  SubpostResponse,
+  SubpostsResponse,
 } from '$lib/pocketbase/generated-types';
 
 // Utility function to populate featured image URL
@@ -161,12 +161,12 @@ export async function createPost(
 }
 
 // Fetch subposts by post ID
-export async function fetchSubpostsByPostId(postId: string): Promise<SubpostResponse[]> {
+export async function fetchSubpostsByPostId(postId: string): Promise<SubpostsResponse[]> {
   try {
     if (!postId) throw new Error('Post ID is required');
     
     // Example of disabling auto-cancellation or increasing timeout
-    const subpostsResponse = await client.collection('subpost').getFullList<SubpostResponse>(200, {
+    const subpostsResponse = await client.collection('subposts').getFullList<SubpostsResponse>(200, {
       filter: `post = "${postId}"`,
       expand: 'post',
       // You can disable auto-cancellation here if possible or increase the timeout

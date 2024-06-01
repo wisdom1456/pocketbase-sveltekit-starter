@@ -17,7 +17,13 @@
 		"src/routes/hello/+page.ts",
 		"src/routes/+layout.ts"
 	],
+	"/help": [
+		"src/routes/+layout.ts"
+	],
 	"/inspire": [
+		"src/routes/+layout.ts"
+	],
+	"/keyboard-shortcuts": [
 		"src/routes/+layout.ts"
 	],
 	"/posts": [
@@ -37,6 +43,9 @@
 		"src/routes/+layout.ts"
 	],
 	"/remember": [
+		"src/routes/+layout.ts"
+	],
+	"/settings": [
 		"src/routes/+layout.ts"
 	],
 	"/subposts/[slug]": [

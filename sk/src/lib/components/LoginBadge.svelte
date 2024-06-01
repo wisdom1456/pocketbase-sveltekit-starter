@@ -1,38 +1,40 @@
 <script lang="ts">
-import { onMount, onDestroy } from "svelte";
-import { authModel, client } from "../pocketbase";
-import Dialog from "./Dialog.svelte";
-import LoginForm from "./LoginForm.svelte";
-import { goto } from "$app/navigation";
-import { fly } from "svelte/transition";
-let isDialogOpen = false;
-let isDropdownOpen = false;
-async function logout() {
-  goto("/");
-  client.authStore.clear();
-  isDialogOpen = false;
-  isDropdownOpen = false;
+  import type { Record, Admin } from 'pocketbase';
+  import { onDestroy } from 'svelte';
+  import { authModel, client } from '../pocketbase';
+  import Dialog from './Dialog.svelte';
+  import { goto } from '$app/navigation';
+  import ThemeSwitch from '$lib/components/ThemeSwitch.svelte';
+  import LoginForm from './LoginForm.svelte';
+  import {fly} from 'svelte/transition';
 
-  // Ensure dropdown is closed on logout
-}
+  let isDialogOpen = false;
+  let isDropdownOpen = false;
 
-function getFileUrl(authModel: { id: any }, avatar: any) {
-  const baseUrl =
-    import.meta.env.VITE_APP_BASE_URL + "/api/files/_pb_users_auth_";
-  const userId = authModel.id;
-  const fileName = avatar;
-  const token = client.authStore.token;
-  return `${baseUrl}/${userId}/${fileName}?token=${token}`;
-}
-const unsubscribe = client.authStore.onChange((token, model) => {
-  // Handle auth state changes
-}, false);
-onDestroy(() => {
-  unsubscribe();
-});
+  async function logout() {
+    goto('/');
+    client.authStore.clear();
+    isDialogOpen = false;
+    isDropdownOpen = false;
+  }
+
+  function getFileUrl(authModel: Record | Admin, avatar: any) {
+    const baseUrl = import.meta.env.VITE_APP_BASE_URL + 'api/files/_pb_users_auth_';
+    const userId = authModel.id;
+    const fileName = avatar;
+    const token = client.authStore.token;
+    return `${baseUrl}/${userId}/${fileName}?token=${token}`;
+  }
+
+  const unsubscribe = client.authStore.onChange((token, model) => {
+    // Handle auth state changes
+  }, false);
+
+  onDestroy(() => {
+    unsubscribe();
+  });
 </script>
 
-<!-- Display user information and dropdown toggle -->
 {#if $authModel}
   <div class="relative inline-block text-left">
     <button
@@ -46,34 +48,33 @@ onDestroy(() => {
       </div>
     </button>
     {#if isDropdownOpen}
-      <ul
-        transition:fly={{ y: 10, duration: 200 }}
-        class="menu dropdown-content absolute right-0 z-[1] mt-2 w-52 rounded-box bg-base-200 p-2 shadow"
-      >
+      <ul class="menu dropdown-content rounded-box bg-base-200 absolute right-0 z-[1] mt-2 w-52 p-2 shadow">
         <li>
-          <button class="justify-between" on:click={() => (isDialogOpen = true)}
-            >Profile</button
+          <button
+            class="flex"
+            title="View profile"
+            on:click={() => goto('/profile')}
           >
-        </li>
-        <!-- Add more dropdown items here -->
-        <li>
-          <button class="flex" title="View profile">
-            <img alt="Profile" src="/avatar.png" class="w-8 rounded-full" />
+            <img
+              alt="Profile"
+              src={getFileUrl($authModel, $authModel?.avatar)}
+              class="w-8 rounded-full"
+            />
             <div class="flex flex-col">
-              <h3 class="font-bold">User name</h3>
-              <span class="text-xs text-accent">username@email.com</span>
+              <h3 class="font-bold">{$authModel?.name}</h3>
+              <span class="text-accent text-xs">{$authModel?.email}</span>
             </div>
           </button>
         </li>
         <div class="divider my-0"></div>
-        <li><button>Settings</button></li>
-        <li><button>Keyboard shortcut</button></li>
+        <li><button on:click={() => goto('/settings')}>Settings</button></li>
+        <li>
+          <button on:click={() => goto('/keyboard-shortcuts')}
+            >Keyboard Shortcuts</button>
+        </li>
+        <li><ThemeSwitch /></li>
         <div class="divider my-0"></div>
-        <li><button>Company profile</button></li>
-        <li><button>Team</button></li>
-        <li><button>Invite Colleagues</button></li>
-        <div class="divider my-0"></div>
-        <li><button>Help</button></li>
+        <li><button on:click={() => goto('/help')}>Help</button></li>
         <li><button on:click={logout}>Sign out</button></li>
       </ul>
     {/if}
@@ -85,12 +86,12 @@ onDestroy(() => {
 {/if}
 <Dialog bind:open={isDialogOpen}>
   {#if $authModel}
-    <!-- Logged in user's profile or logout option -->
     <div transition:fly={{ y: -10, duration: 200 }}>
       <button on:click={logout}>Sign Out</button>
     </div>
   {:else}
-    <!-- Login form for users who are not logged in -->
-    <div transition:fly={{ y: -10, duration: 200 }}><LoginForm /></div>
+    <div transition:fly={{ y: -10, duration: 200 }}>
+      <LoginForm />
+    </div>
   {/if}
 </Dialog>

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { PostsResponse, SubpostResponse } from '$lib/pocketbase/generated-types';
+  import type { PostsResponse, SubpostsResponse } from '$lib/pocketbase/generated-types';
   import Markdown from 'svelte-markdown';
   import TagGroup from '$lib/components/TagGroup.svelte';
   import { client } from '$lib/pocketbase';
@@ -8,7 +8,7 @@
 
   export let post: PostsResponse;
 
-  let subposts: SubpostResponse[] = [];
+  let subposts: SubpostsResponse[] = [];
   let errorMessage: string = '';
 
   async function fetchSubPosts() {
@@ -95,7 +95,7 @@
       <ul class="list-none p-0">
         {#each subposts as subpost}
           <li class="m-1">
-            <a href={`/subpost/${subpost.id}`} class="text-sm link link-primary">{subpost.title}</a>
+            <a href={`/subposts/${subpost.slug}`} class="text-sm link link-primary">{subpost.title}</a>
           </li>
         {/each}
       </ul>

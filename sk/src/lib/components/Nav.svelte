@@ -3,7 +3,6 @@ import { base } from "$app/paths";
 import { page } from "$app/stores";
 import LoginBadge from "$lib/components/LoginBadge.svelte";
 import { authModel } from "$lib/pocketbase";
-import ThemeSwitch from "$lib/components/ThemeSwitch.svelte";
 import { fly } from "svelte/transition";
 let isOpen = false;
 const appLinks = [
@@ -80,7 +79,6 @@ function closeMenu() {
                 <li><a href={path} on:click={closeMenu}>{label}</a></li>
               {/each}
             {/if}
-            <ThemeSwitch />
           </ul>
         {/if}
       </div>
@@ -97,9 +95,6 @@ function closeMenu() {
               >
             </li>
           {/each}
-          <li class="p-4">
-            <ThemeSwitch />
-          </li>
         {:else}
           {#each landingLinks as [path, label]}
             <li class="p-4"><a href={path}>{label}</a></li>

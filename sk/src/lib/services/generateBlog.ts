@@ -3,7 +3,7 @@ import { authModel, client, save } from "$lib/pocketbase";
 import { metadata } from "$lib/app/stores";
 import type {
   PostsResponse,
-  SubpostRecord,
+  SubpostsRecord,
 } from "$lib/pocketbase/generated-types";
 import { ensureTagsExist, generateImageFromDreamStudio } from "$lib/utils/api";
 import { alertOnFailure } from "$lib/pocketbase/ui";
@@ -38,6 +38,14 @@ interface PostData {
 export interface ServiceModelSelection {
   selectedService: string;
   selectedModel: string;
+}
+
+export interface GenerateBlogResponse {
+  id: string;
+  title: string;
+  slug: string;
+  content: string;
+  post: string;
 }
 
 // Main function to generate and save the blog post
@@ -119,7 +127,7 @@ export async function generateBlog(
       throw new Error("Failed to create the post.");
     }
   } catch (error) {
-    alertOnFailure(() => `Failed to generate and save post: ${error}`);
+    alertOnFailure(async () => `Failed to generate and save post: ${error}`);
     throw error;
   }
 }
@@ -130,19 +138,12 @@ function isBase64Image(str: string) {
   return base64ImagePattern.test(str);
 }
 
-// Main function to generate and save the blog response (subpost)
 export async function generateBlogResponse(
   userInput: string,
   parentPostId: string,
   authModel: any
-): Promise<void> {
-  /* if (!authModel?.id) {
-    console.error("User is not logged in.");
-    alert("Please log in to save your subpost.");
-    return;
-  } */
-
-  let subpost: SubpostRecord = {
+): Promise<GenerateBlogResponse> {
+  let subpost: SubpostsRecord = {
     title: "",
     content: "",
     post: parentPostId,
@@ -159,6 +160,7 @@ export async function generateBlogResponse(
       ),
       callAPI(`${titlePrompt}'${userInput}'`),
     ]);
+
     // Generate slug
     subpost.slug = title
       .toLowerCase()
@@ -168,17 +170,24 @@ export async function generateBlogResponse(
 
     subpost.content = content;
     subpost.title = title;
-    // Create the subpost
-    await save("subpost", subpost as SubpostRecord, true);
 
-    // Redirect to the parent post
-    const parentPost = await client.collection("posts").getOne(parentPostId);
-    goto(`${import.meta.env.VITE_APP_SK_URL}/posts/${parentPost.slug}`);
+    // Create the subpost
+    const createdSubpost = await save("subposts", subpost as SubpostsRecord, true);
+
+    // Return the created subpost as GenerateBlogResponse
+    return {
+      id: createdSubpost.id,
+      title: createdSubpost.title,
+      slug: createdSubpost.slug,
+      content: createdSubpost.content,
+      post: createdSubpost.post,
+    };
   } catch (error) {
-    alertOnFailure(() => `Failed to generate and save subpost: ${error}`);
+    alertOnFailure(async () => `Failed to generate and save subpost: ${error}`);
     throw error;
   }
 }
+
 
 export async function generateTagTree(
   tags: string,
@@ -202,7 +211,7 @@ export async function generateTagTree(
     //const parsedTagTree = JSON.parse(cleanedTagTree);
     return rawTagTree;
   } catch (error) {
-    alertOnFailure(() => `Failed to generate and save post: ${error}`);
+    alertOnFailure(async () => `Failed to generate and save post: ${error}`);
     throw error;
   }
 }

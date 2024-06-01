@@ -1,8 +1,14 @@
 <!-- Footer -->
+<script lang="ts">
+import ThemeSwitch from "$lib/components/ThemeSwitch.svelte";
+</script>
+
+
+
 <footer class="footer footer-center bg-base-300 py-8 text-base-content">
   <div>
     <p class="font-bold">mind.ai</p>
-    <p>Cultivating Brilliant Ideas Since 2009</p>
+    <p>Cultivating Brilliant Ideas Since 2009 - <ThemeSwitch /></p>    
     <p>modible - 2024 - All right reserved</p>
   </div>
   <div>
