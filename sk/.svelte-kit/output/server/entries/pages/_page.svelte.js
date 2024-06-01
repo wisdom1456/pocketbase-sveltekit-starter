@@ -1,5 +1,5 @@
 import { s as subscribe, a as set_store_value } from "../../chunks/utils.js";
-import { c as create_ssr_component, e as escape, a as add_attribute } from "../../chunks/ssr.js";
+import { c as create_ssr_component, b as escape, a as add_attribute } from "../../chunks/ssr.js";
 import { m as metadata } from "../../chunks/metadataStore.js";
 const Page = create_ssr_component(($$result, $$props, $$bindings, slots) => {
   let $metadata, $$unsubscribe_metadata;

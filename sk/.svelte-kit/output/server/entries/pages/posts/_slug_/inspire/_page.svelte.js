@@ -1,23 +1,22 @@
 import { s as subscribe } from "../../../../../chunks/utils.js";
 import { c as create_ssr_component, v as validate_component } from "../../../../../chunks/ssr.js";
 import { p as page } from "../../../../../chunks/stores.js";
-import { w as writable } from "../../../../../chunks/index.js";
 import "../../../../../chunks/index2.js";
 import "../../../../../chunks/Alerts.js";
+import { a as availableServices, S as ServiceSelector } from "../../../../../chunks/ServiceSelector.js";
 import "marked";
-/* empty css                                                            */import { a as availableServices, S as ServiceSelector } from "../../../../../chunks/ServiceSelector.js";
-import { L as LoginGuard } from "../../../../../chunks/LoginGuard.js";
-const serviceModelSelectionStore = writable({
-  selectedService: "",
-  selectedModel: ""
-});
+/* empty css                                                            */import { L as LoginGuard } from "../../../../../chunks/LoginGuard.js";
+const _page_svelte_svelte_type_style_lang = "";
+const css = {
+  code: ".bullet-point.svelte-1s8f3y1:hover{transform:translateY(-5px);transition:transform 0.3s ease}",
+  map: null
+};
 const Page = create_ssr_component(($$result, $$props, $$bindings, slots) => {
   let $page, $$unsubscribe_page;
-  let $$unsubscribe_serviceModelSelectionStore;
   $$unsubscribe_page = subscribe(page, (value) => $page = value);
-  $$unsubscribe_serviceModelSelectionStore = subscribe(serviceModelSelectionStore, (value) => value);
   let selectedService = availableServices[0].name;
   let selectedModel = availableServices[0].models[0];
+  $$result.css.add(css);
   let $$settled;
   let $$rendered;
   let previous_head = $$result.head;
@@ -46,7 +45,6 @@ const Page = create_ssr_component(($$result, $$props, $$bindings, slots) => {
     })}`;
   } while (!$$settled);
   $$unsubscribe_page();
-  $$unsubscribe_serviceModelSelectionStore();
   return $$rendered;
 });
 export {

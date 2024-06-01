@@ -1,5 +1,5 @@
 import { s as subscribe, a as set_store_value } from "../../../chunks/utils.js";
-import { c as create_ssr_component, b as each, a as add_attribute, e as escape, v as validate_component } from "../../../chunks/ssr.js";
+import { c as create_ssr_component, e as each, a as add_attribute, b as escape, v as validate_component } from "../../../chunks/ssr.js";
 import { c as client } from "../../../chunks/index2.js";
 import { w as writable } from "../../../chunks/index.js";
 import "../../../chunks/Alerts.js";
@@ -7,27 +7,25 @@ import { m as metadata } from "../../../chunks/metadataStore.js";
 import { S as SvelteMarkdown } from "../../../chunks/SvelteMarkdown.js";
 /* empty css                                                      */import { L as LoginGuard } from "../../../chunks/LoginGuard.js";
 const css = {
-  code: ".tag.svelte-1h6kmfq:hover{transform:translateY(-5px);transition:transform 0.3s ease}",
+  code: ".tag.svelte-h7yqhi:hover{transform:translateY(-5px);transition:transform 0.3s ease}",
   map: null
 };
 const TagGroup = create_ssr_component(($$result, $$props, $$bindings, slots) => {
   let { post } = $$props;
-  let { tags = [] } = $$props;
+  let { tags = post.tags || [] } = $$props;
   if ($$props.post === void 0 && $$bindings.post && post !== void 0)
     $$bindings.post(post);
   if ($$props.tags === void 0 && $$bindings.tags && tags !== void 0)
     $$bindings.tags(tags);
   $$result.css.add(css);
   {
-    {
-      if (post && post.tags) {
-        tags = post.tags;
-      }
+    if (post && post.expand && post.expand.tags) {
+      tags = post.expand.tags.map((tag) => tag.title);
     }
   }
   return `${tags.length > 0 ? `<div class="flex flex-wrap pb-2 pt-4">${each(tags, (tag, i) => {
-    return `${i < 2 ? `<a${add_attribute("href", `/tags/${tag}`, 0)} class="tag hover:bg-primary-focus mb-2 mr-2 inline-block cursor-pointer bg-primary-content px-2 py-1 text-sm text-accent svelte-1h6kmfq">#${escape(tag)} </a>` : ``}`;
-  })}</div>` : `<div class="px-6 pb-2 pt-4 text-sm font-semibold" data-svelte-h="svelte-fhk8h1">No tags</div>`}`;
+    return `<a${add_attribute("href", `/tags/${tag}`, 0)} class="tag hover:bg-primary-focus mb-2 mr-2 inline-block cursor-pointer bg-primary-content px-2 py-1 text-sm text-accent svelte-h7yqhi">#${escape(tag)} </a>`;
+  })}</div>` : `<div class="px-6 pb-2 pt-4 text-sm font-semibold" data-svelte-h="svelte-1u28oxv">No tags</div>`}`;
 });
 function createPostsStore() {
   const { subscribe: subscribe2, set, update } = writable({

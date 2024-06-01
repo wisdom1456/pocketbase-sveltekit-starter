@@ -1,5 +1,5 @@
 import { i as is_promise, n as noop } from "./utils.js";
-import { c as create_ssr_component, e as escape, b as each, a as add_attribute } from "./ssr.js";
+import { c as create_ssr_component, b as escape, e as each, a as add_attribute } from "./ssr.js";
 import { c as client } from "./index2.js";
 const LoginForm = create_ssr_component(($$result, $$props, $$bindings, slots) => {
   let { authCollection = "users" } = $$props;

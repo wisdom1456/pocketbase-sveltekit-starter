@@ -1,12 +1,29 @@
 <script lang="ts">
-export let open: boolean;
+  export let open: boolean;
 
-function handleClose() {
-  open = false;
-}
+  function handleClose() {
+    open = false;
+    console.log("Dialog closed");
+  }
+
+  function handleClickOutside(event: MouseEvent) {
+    const target = event.target as HTMLElement | null;
+    if (target && !target.closest(".modal-box")) {
+      handleClose();
+      console.log("Clicked outside the dialog, closing dialog");
+    }
+  }
+
+  $: if (open) {
+    document.addEventListener('click', handleClickOutside);
+    console.log("Dialog opened, added click event listener");
+  } else {
+    document.removeEventListener('click', handleClickOutside);
+    console.log("Dialog closed, removed click event listener");
+  }
 </script>
 
-<dialog class="modal" open={open} on:close={handleClose}>
+<dialog class="modal" {open} on:close={handleClose}>
   <div class="modal-box">
     <slot />
     <div class="modal-action">
@@ -14,7 +31,3 @@ function handleClose() {
     </div>
   </div>
 </dialog>
-
-<style>
-/* Add any necessary styles */
-</style>

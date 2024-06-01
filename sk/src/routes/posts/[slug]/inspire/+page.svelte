@@ -29,7 +29,7 @@
       if (post) {
         // Ensure post has expanded tags
         const expandedPost = await client.collection('posts').getOne(post.id, {
-          expand: 'tags'
+          expand: 'tags,featuredImage'
         });
         post = { ...post, expand: expandedPost.expand };
         subposts = await fetchSubpostsByPostId(post.id);
@@ -132,9 +132,10 @@
         {#if post.expand?.featuredImage}
           {@const imageRecord = post.expand.featuredImage}
           {@const imageUrl = imageRecord?.file ? client.getFileUrl(imageRecord, imageRecord.file) : ''}
-          <img src={imageUrl} alt={post.title} class="aspect-[16/9] w-full object-cover sm:aspect-[2/1] lg:aspect-[3/2]" />
+          <img src={imageUrl} alt={post.title} class="mx-auto rounded-lg shadow-md" />
+          <figcaption class="mt-2 text-center text-sm">{post.title}</figcaption>
         {:else}
-          <img src="https://via.placeholder.com/800x400.png?text=AI+Blog" alt="Placeholder" class="aspect-[16/9] w-full object-cover sm:aspect-[2/1] lg:aspect-[3/2]" />
+          <img src="https://via.placeholder.com/800x400.png?text=AI+Blog" alt="Placeholder" class="mx-auto rounded-lg shadow-md" />
         {/if}
       </figure>
 
@@ -152,7 +153,7 @@
                 {#each section.bullets as bullet (bullet)}
                   <li class="mb-2">
                     <button
-                      class={`bullet-point flex cursor-pointer items-baseline px-4 py-2 text-left transition duration-200 ease-in-out hover:bg-primary ${selectedBullets.includes(bullet) ? 'bg-primary text-primary-content' : ''}`}
+                      class={`bullet-point flex cursor-pointer items-baseline px-4 py-2 text-left transition duration-200 ease-in-out hover:bg-secondary hover:text-secondary-content ${selectedBullets.includes(bullet) ? 'bg-primary text-primary-content' : ''}`}
                       on:click={() => toggleBullet(bullet)}
                       aria-label={`Bullet point: ${bullet}`}
                       type="button"

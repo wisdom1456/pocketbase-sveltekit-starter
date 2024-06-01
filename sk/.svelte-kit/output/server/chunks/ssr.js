@@ -128,10 +128,10 @@ function add_classes(classes) {
 }
 export {
   add_attribute as a,
-  each as b,
+  escape as b,
   create_ssr_component as c,
   add_classes as d,
-  escape as e,
+  each as e,
   createEventDispatcher as f,
   getContext as g,
   missing_component as m,

@@ -1,31 +1,41 @@
 <script lang="ts">
-import { base } from "$app/paths";
-import { page } from "$app/stores";
-import LoginBadge from "$lib/components/LoginBadge.svelte";
-import { authModel } from "$lib/pocketbase";
-import { fly } from "svelte/transition";
-let isOpen = false;
-const appLinks = [
-  ["/create/", "Create"],
-  ["/remember/", "Remember"],
-  //,
-  ["/inspire/", "Inspire"],
-  //["/explore/", "Explore"],
-  //["/reflect/", "Reflect"],
-];
-const landingLinks = [
-  ["/#features", "Features"],
-  ["/#how-it-works", "How It Works"],
-  ["/#pricing", "Pricing"],
-  ["/#testimonials", "Testimonials"],
-  ["/#contact", "Contact"],
-];
-function toggleMenu() {
-  isOpen = !isOpen;
-}
-function closeMenu() {
-  isOpen = false;
-}
+  import { base } from "$app/paths";
+  import { page } from "$app/stores";
+  import LoginBadge from "$lib/components/LoginBadge.svelte";
+  import { authModel } from "$lib/pocketbase";
+  import { fly } from "svelte/transition";
+  let isOpen = false;
+  const appLinks = [
+    ["/create/", "Create"],
+    ["/remember/", "Remember"],
+    ["/inspire/", "Inspire"],
+  ];
+  const landingLinks = [
+    ["/#features", "Features"],
+    ["/#how-it-works", "How It Works"],
+    ["/#pricing", "Pricing"],
+    ["/#testimonials", "Testimonials"],
+    ["/#contact", "Contact"],
+  ];
+  function toggleMenu() {
+    isOpen = !isOpen;
+  }
+  function closeMenu() {
+    isOpen = false;
+  }
+
+  function handleClickOutside(event: MouseEvent) {
+    const target = event.target as HTMLElement | null;
+    if (target && !target.closest(".dropdown-content")) {
+      closeMenu();
+    }
+  }
+
+  $: if (isOpen) {
+    document.addEventListener("click", handleClickOutside);
+  } else {
+    document.removeEventListener("click", handleClickOutside);
+  }
 </script>
 
 <nav>

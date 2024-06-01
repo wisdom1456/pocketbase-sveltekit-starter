@@ -10,7 +10,7 @@ return {
 	assets: new Set(["android-chrome-192x192.png","android-chrome-512x512.png","apple-touch-icon.png","favicon-16x16.png","favicon-32x32.png","favicon.ico","img/advocate.png","img/analytical.png","img/cave.png","img/creative.png","img/leaf.png","img/logo_large.jpg","img/mindgarden.png","img/mountain.png","img/optimistic.png","img/pessimistic.png","img/realistic.png","img/thoughts.png","img/treeBrain.png","img/waterfall.png","site.webmanifest"]),
 	mimeTypes: {".png":"image/png",".jpg":"image/jpeg",".webmanifest":"application/manifest+json"},
 	_: {
-		client: {"start":"_app/immutable/entry/start.ac5cf750.js","app":"_app/immutable/entry/app.543c8f42.js","imports":["_app/immutable/entry/start.ac5cf750.js","_app/immutable/chunks/scheduler.c76fa77e.js","_app/immutable/chunks/singletons.c4c55af0.js","_app/immutable/chunks/index.b36f6ad1.js","_app/immutable/entry/app.543c8f42.js","_app/immutable/chunks/scheduler.c76fa77e.js","_app/immutable/chunks/index.315486b9.js"],"stylesheets":[],"fonts":[]},
+		client: {"start":"_app/immutable/entry/start.c2dc4e75.js","app":"_app/immutable/entry/app.38c46c12.js","imports":["_app/immutable/entry/start.c2dc4e75.js","_app/immutable/chunks/scheduler.97adf797.js","_app/immutable/chunks/singletons.a77e5c97.js","_app/immutable/chunks/index.15707502.js","_app/immutable/entry/app.38c46c12.js","_app/immutable/chunks/scheduler.97adf797.js","_app/immutable/chunks/index.7119c0cc.js"],"stylesheets":[],"fonts":[]},
 		nodes: [
 			__memo(() => import('./nodes/0.js')),
 			__memo(() => import('./nodes/1.js')),
@@ -27,7 +27,10 @@ return {
 			__memo(() => import('./nodes/12.js')),
 			__memo(() => import('./nodes/13.js')),
 			__memo(() => import('./nodes/14.js')),
-			__memo(() => import('./nodes/15.js'))
+			__memo(() => import('./nodes/15.js')),
+			__memo(() => import('./nodes/16.js')),
+			__memo(() => import('./nodes/17.js')),
+			__memo(() => import('./nodes/18.js'))
 		],
 		routes: [
 			{
@@ -66,66 +69,87 @@ return {
 				endpoint: null
 			},
 			{
+				id: "/help",
+				pattern: /^\/help\/?$/,
+				params: [],
+				page: { layouts: [0,], errors: [1,], leaf: 7 },
+				endpoint: null
+			},
+			{
 				id: "/inspire",
 				pattern: /^\/inspire\/?$/,
 				params: [],
-				page: { layouts: [0,], errors: [1,], leaf: 7 },
+				page: { layouts: [0,], errors: [1,], leaf: 8 },
+				endpoint: null
+			},
+			{
+				id: "/keyboard-shortcuts",
+				pattern: /^\/keyboard-shortcuts\/?$/,
+				params: [],
+				page: { layouts: [0,], errors: [1,], leaf: 9 },
 				endpoint: null
 			},
 			{
 				id: "/posts",
 				pattern: /^\/posts\/?$/,
 				params: [],
-				page: { layouts: [0,], errors: [1,], leaf: 8 },
+				page: { layouts: [0,], errors: [1,], leaf: 10 },
 				endpoint: null
 			},
 			{
 				id: "/posts/[slug]",
 				pattern: /^\/posts\/([^/]+?)\/?$/,
 				params: [{"name":"slug","optional":false,"rest":false,"chained":false}],
-				page: { layouts: [0,], errors: [1,], leaf: 9 },
+				page: { layouts: [0,], errors: [1,], leaf: 11 },
 				endpoint: null
 			},
 			{
 				id: "/posts/[slug]/edit",
 				pattern: /^\/posts\/([^/]+?)\/edit\/?$/,
 				params: [{"name":"slug","optional":false,"rest":false,"chained":false}],
-				page: { layouts: [0,], errors: [1,], leaf: 10 },
+				page: { layouts: [0,], errors: [1,], leaf: 12 },
 				endpoint: null
 			},
 			{
 				id: "/posts/[slug]/inspire",
 				pattern: /^\/posts\/([^/]+?)\/inspire\/?$/,
 				params: [{"name":"slug","optional":false,"rest":false,"chained":false}],
-				page: { layouts: [0,], errors: [1,], leaf: 11 },
+				page: { layouts: [0,], errors: [1,], leaf: 13 },
 				endpoint: null
 			},
 			{
 				id: "/reflect",
 				pattern: /^\/reflect\/?$/,
 				params: [],
-				page: { layouts: [0,], errors: [1,], leaf: 12 },
+				page: { layouts: [0,], errors: [1,], leaf: 14 },
 				endpoint: null
 			},
 			{
 				id: "/remember",
 				pattern: /^\/remember\/?$/,
 				params: [],
-				page: { layouts: [0,], errors: [1,], leaf: 13 },
+				page: { layouts: [0,], errors: [1,], leaf: 15 },
+				endpoint: null
+			},
+			{
+				id: "/settings",
+				pattern: /^\/settings\/?$/,
+				params: [],
+				page: { layouts: [0,], errors: [1,], leaf: 16 },
 				endpoint: null
 			},
 			{
 				id: "/subposts/[slug]",
 				pattern: /^\/subposts\/([^/]+?)\/?$/,
 				params: [{"name":"slug","optional":false,"rest":false,"chained":false}],
-				page: { layouts: [0,], errors: [1,], leaf: 14 },
+				page: { layouts: [0,], errors: [1,], leaf: 17 },
 				endpoint: null
 			},
 			{
 				id: "/tags/[tag]",
 				pattern: /^\/tags\/([^/]+?)\/?$/,
 				params: [{"name":"tag","optional":false,"rest":false,"chained":false}],
-				page: { layouts: [0,], errors: [1,], leaf: 15 },
+				page: { layouts: [0,], errors: [1,], leaf: 18 },
 				endpoint: null
 			}
 		],

@@ -1,5 +1,5 @@
 import { s as subscribe } from "./utils.js";
-import { c as create_ssr_component, b as each, a as add_attribute, e as escape } from "./ssr.js";
+import { c as create_ssr_component, e as each, a as add_attribute, b as escape } from "./ssr.js";
 import { w as writable } from "./index.js";
 const alerts = {
   ...writable([]),

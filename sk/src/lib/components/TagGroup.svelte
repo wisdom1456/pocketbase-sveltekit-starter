@@ -12,12 +12,13 @@
 {#if tags.length > 0}
   <div class="flex flex-wrap pb-2 pt-4">
     {#each tags as tag, i (tag)}
-      <a
-        href={`/tags/${tag}`}
-        class="tag hover:bg-primary-focus mb-2 mr-2 inline-block cursor-pointer bg-primary-content px-2 py-1 text-sm text-accent"
-      >
-        #{tag}
-      </a>
+    <a
+  href={`/tags/${tag}`}
+  class="tag border border-secondary m-1 hover:border-accent hover:bg-accent hover:text-accent-content inline-block cursor-pointer bg-primary px-2 text-sm text-primary-content rounded-lg"
+>
+  {tag}
+</a>
+  
     {/each}
   </div>
 {:else}

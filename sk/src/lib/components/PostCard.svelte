@@ -3,28 +3,42 @@
   import Markdown from 'svelte-markdown';
   import TagGroup from '$lib/components/TagGroup.svelte';
   import { client } from '$lib/pocketbase';
-  import { onMount } from 'svelte';
+  import { onMount, createEventDispatcher } from 'svelte';
   import { fetchSubpostsByPostId } from '$lib/services/postService';
+  import { goto } from '$app/navigation';
 
   export let post: PostsResponse;
 
   let subposts: SubpostsResponse[] = [];
   let errorMessage: string = '';
 
+  const dispatch = createEventDispatcher();
+
   async function fetchSubPosts() {
     try {
-      // Post ID to filter subposts
       const postID = post.id;
       console.log('Post ID:', postID);
 
-      // Fetch subposts using the imported function
       subposts = await fetchSubpostsByPostId(postID);
       console.log('Filtered Subposts:', subposts);
-
-      //subposts = subpostsResponse;
     } catch (error) {
       console.error('Failed to fetch subposts:', error);
       errorMessage = 'Failed to load subposts';
+    }
+  }
+
+  async function deletePost() {
+    const confirmed = confirm('Are you sure you want to delete this post?');
+    if (!confirmed) return;
+
+    try {
+      await client.collection('posts').delete(post.id);
+      console.log('Post deleted successfully');
+      dispatch('postDeleted', { id: post.id });
+      goto('/remember');
+    } catch (error) {
+      console.error('Failed to delete post:', error);
+      errorMessage = 'Failed to delete post';
     }
   }
 
@@ -83,9 +97,10 @@
     <div class="card-actions mt-4 justify-between">
       <a class="btn btn-outline" href={`/posts/${post.slug}/edit`}>Edit</a>
       <a class="btn btn-outline" href={`/posts/${post.slug}/inspire`}>Inspire</a>
-      <a
+      <button
         class="btn btn-outline btn-secondary"
-        href={`/posts/${post.slug}#delete`}>Delete</a>
+        on:click={deletePost}
+      >Delete</button>
     </div>
   </div>
 

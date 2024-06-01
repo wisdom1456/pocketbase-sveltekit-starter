@@ -2,20 +2,23 @@
   import type { Record, Admin } from 'pocketbase';
   import { onDestroy } from 'svelte';
   import { authModel, client } from '../pocketbase';
-  import Dialog from './Dialog.svelte';
   import { goto } from '$app/navigation';
   import ThemeSwitch from '$lib/components/ThemeSwitch.svelte';
+  import Dialog from './Dialog.svelte';
   import LoginForm from './LoginForm.svelte';
-  import {fly} from 'svelte/transition';
+  import { fly } from 'svelte/transition';
+  import { onMount } from 'svelte';
 
   let isDialogOpen = false;
   let isDropdownOpen = false;
+  let isThemeModalOpen = false;
 
   async function logout() {
     goto('/');
     client.authStore.clear();
     isDialogOpen = false;
     isDropdownOpen = false;
+    console.log("Logout clicked");
   }
 
   function getFileUrl(authModel: Record | Admin, avatar: any) {
@@ -27,11 +30,35 @@
   }
 
   const unsubscribe = client.authStore.onChange((token, model) => {
-    // Handle auth state changes
+    console.log("Auth state changed:", { token, model });
   }, false);
 
   onDestroy(() => {
     unsubscribe();
+  });
+
+  function handleClickOutside(event: MouseEvent) {
+    const target = event.target as HTMLElement | null;
+    if (target && !target.closest(".dropdown") && !target.closest("dialog")) {
+      isDropdownOpen = false;
+      isThemeModalOpen = false;
+      console.log("Clicked outside, closing dropdown and modal");
+    }
+  }
+
+  function handleThemeSelected() {
+    isDropdownOpen = false;
+    isThemeModalOpen = false;
+    console.log("Theme selected, closing dropdown and modal");
+  }
+
+  onMount(() => {
+    document.addEventListener("click", handleClickOutside);
+    console.log("Mounted, added click event listener");
+    return () => {
+      document.removeEventListener("click", handleClickOutside);
+      console.log("Unmounted, removed click event listener");
+    };
   });
 </script>
 
@@ -39,7 +66,10 @@
   <div class="relative inline-block text-left">
     <button
       class="dropdown"
-      on:click={() => (isDropdownOpen = !isDropdownOpen)}
+      on:click={() => {
+        isDropdownOpen = !isDropdownOpen;
+        console.log("Dropdown button clicked, state:", isDropdownOpen);
+      }}
       aria-haspopup="true"
       aria-expanded={isDropdownOpen}
     >
@@ -69,10 +99,13 @@
         <div class="divider my-0"></div>
         <li><button on:click={() => goto('/settings')}>Settings</button></li>
         <li>
-          <button on:click={() => goto('/keyboard-shortcuts')}
-            >Keyboard Shortcuts</button>
+          <button on:click={() => goto('/keyboard-shortcuts')}>Keyboard Shortcuts</button>
         </li>
-        <li><ThemeSwitch /></li>
+        <li><button on:click={(event) => {
+          event.stopPropagation();
+          isThemeModalOpen = true;
+          console.log("Change Theme clicked, state:", isThemeModalOpen);
+        }}>Change Theme</button></li>
         <div class="divider my-0"></div>
         <li><button on:click={() => goto('/help')}>Help</button></li>
         <li><button on:click={logout}>Sign out</button></li>
@@ -80,9 +113,12 @@
     {/if}
   </div>
 {:else}
-  <button class="btn btn-primary" on:click={() => (isDialogOpen = true)}
-    >Sign In</button
-  >
+  <button class="btn btn-primary" on:click={() => {
+    isDialogOpen = true;
+    console.log("Sign In clicked, state:", isDialogOpen);
+  }}>
+    Sign In
+  </button>
 {/if}
 <Dialog bind:open={isDialogOpen}>
   {#if $authModel}
@@ -94,4 +130,8 @@
       <LoginForm />
     </div>
   {/if}
+</Dialog>
+
+<Dialog bind:open={isThemeModalOpen}>
+  <ThemeSwitch on:themeSelected={handleThemeSelected} />
 </Dialog>

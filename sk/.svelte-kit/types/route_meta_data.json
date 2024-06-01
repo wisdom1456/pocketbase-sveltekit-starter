@@ -39,6 +39,9 @@
 	"/posts/[slug]/inspire": [
 		"src/routes/+layout.ts"
 	],
+	"/profile": [
+		"src/routes/+layout.ts"
+	],
 	"/reflect": [
 		"src/routes/+layout.ts"
 	],

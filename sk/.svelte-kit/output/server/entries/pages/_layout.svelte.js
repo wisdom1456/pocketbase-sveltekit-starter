@@ -1,5 +1,5 @@
 import { s as subscribe, a as set_store_value } from "../../chunks/utils.js";
-import { c as create_ssr_component, o as onDestroy, a as add_attribute, e as escape, v as validate_component, b as each, d as add_classes } from "../../chunks/ssr.js";
+import { c as create_ssr_component, a as add_attribute, e as each, b as escape, o as onDestroy, v as validate_component, d as add_classes } from "../../chunks/ssr.js";
 import PocketBase from "pocketbase";
 import { m as metadata } from "../../chunks/metadataStore.js";
 import { a as authModel, c as client, b as beforeNavigate } from "../../chunks/index2.js";
@@ -18,44 +18,6 @@ const Dialog = create_ssr_component(($$result, $$props, $$bindings, slots) => {
   if ($$props.open === void 0 && $$bindings.open && open !== void 0)
     $$bindings.open(open);
   return `<dialog class="modal" ${open ? "open" : ""}><div class="modal-box">${slots.default ? slots.default({}) : ``} <div class="modal-action"><button class="btn btn-primary" data-svelte-h="svelte-9f8voo">Close</button></div></div> </dialog>`;
-});
-const LoginBadge = create_ssr_component(($$result, $$props, $$bindings, slots) => {
-  let $authModel, $$unsubscribe_authModel;
-  $$unsubscribe_authModel = subscribe(authModel, (value) => $authModel = value);
-  let isDialogOpen = false;
-  let isDropdownOpen = false;
-  const unsubscribe = client.authStore.onChange(
-    (token, model) => {
-    },
-    false
-  );
-  onDestroy(() => {
-    unsubscribe();
-  });
-  let $$settled;
-  let $$rendered;
-  let previous_head = $$result.head;
-  do {
-    $$settled = true;
-    $$result.head = previous_head;
-    $$rendered = ` ${$authModel ? `<div class="relative inline-block text-left"><button class="dropdown" aria-haspopup="true"${add_attribute("aria-expanded", isDropdownOpen, 0)}><div tabindex="0" role="button" class="btn">${escape($authModel?.name || $authModel?.username || "User")}</div></button> ${``}</div>` : `<button class="btn btn-primary" data-svelte-h="svelte-j0oxai">Sign In</button>`} ${validate_component(Dialog, "Dialog").$$render(
-      $$result,
-      { open: isDialogOpen },
-      {
-        open: ($$value) => {
-          isDialogOpen = $$value;
-          $$settled = false;
-        }
-      },
-      {
-        default: () => {
-          return `${$authModel ? ` <div><button data-svelte-h="svelte-11z22cn">Sign Out</button></div>` : ` <div>${validate_component(LoginForm, "LoginForm").$$render($$result, {}, {}, {})}</div>`}`;
-        }
-      }
-    )}`;
-  } while (!$$settled);
-  $$unsubscribe_authModel();
-  return $$rendered;
 });
 const themes = [
   {
@@ -354,6 +316,44 @@ const ThemeSwitch = create_ssr_component(($$result, $$props, $$bindings, slots) 
                     </div></div> <div class="flex aspect-square w-5 items-center justify-center rounded bg-accent lg:w-6"><div class="text-sm font-bold text-accent-content">A</div></div> <div class="flex aspect-square w-5 items-center justify-center rounded bg-neutral lg:w-6"><div class="text-sm font-bold text-neutral-content">A</div></div> </div></div> </div></div> </button>`;
   })}</div></div> <form method="dialog" class="modal-backdrop" data-svelte-h="svelte-nzabrk"><button>Close</button></form></dialog>`;
 });
+const LoginBadge = create_ssr_component(($$result, $$props, $$bindings, slots) => {
+  let $authModel, $$unsubscribe_authModel;
+  $$unsubscribe_authModel = subscribe(authModel, (value) => $authModel = value);
+  let isDialogOpen = false;
+  let isDropdownOpen = false;
+  const unsubscribe = client.authStore.onChange(
+    (token, model) => {
+    },
+    false
+  );
+  onDestroy(() => {
+    unsubscribe();
+  });
+  let $$settled;
+  let $$rendered;
+  let previous_head = $$result.head;
+  do {
+    $$settled = true;
+    $$result.head = previous_head;
+    $$rendered = `${$authModel ? `<div class="relative inline-block text-left"><button class="dropdown" aria-haspopup="true"${add_attribute("aria-expanded", isDropdownOpen, 0)}><div tabindex="0" role="button" class="btn">${escape($authModel?.name || $authModel?.username || "User")}</div></button> ${``}</div>` : `<button class="btn btn-primary" data-svelte-h="svelte-j0oxai">Sign In</button>`} ${validate_component(Dialog, "Dialog").$$render(
+      $$result,
+      { open: isDialogOpen },
+      {
+        open: ($$value) => {
+          isDialogOpen = $$value;
+          $$settled = false;
+        }
+      },
+      {
+        default: () => {
+          return `${$authModel ? `<div><button data-svelte-h="svelte-11z22cn">Sign Out</button></div>` : `<div>${validate_component(LoginForm, "LoginForm").$$render($$result, {}, {}, {})}</div>`}`;
+        }
+      }
+    )}`;
+  } while (!$$settled);
+  $$unsubscribe_authModel();
+  return $$rendered;
+});
 const Nav = create_ssr_component(($$result, $$props, $$bindings, slots) => {
   let $authModel, $$unsubscribe_authModel;
   let $page, $$unsubscribe_page;
@@ -377,12 +377,12 @@ const Nav = create_ssr_component(($$result, $$props, $$bindings, slots) => {
   $$unsubscribe_page();
   return `<nav><div class="navbar"><div class="navbar-start"><div class="dropdown" role="button" aria-haspopup="true"${add_attribute("aria-expanded", isOpen, 0)}${add_attribute("tabindex", 0, 0)}><button class="btn btn-ghost lg:hidden" tabindex="0" data-svelte-h="svelte-hulv4i"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h8m-8 6h16"></path></svg></button> ${``}</div> <a href="/" class="btn btn-ghost text-xl normal-case" data-svelte-h="svelte-843whk">mind.ai</a></div> <div class="navbar-center hidden lg:flex"><ul class="menu menu-horizontal p-0">${$authModel ? `${each(appLinks, ([path, label]) => {
     return `<li class="p-4"><a${add_attribute("href", `${base}${path}`, 0)}${add_classes(($page.url.pathname === path ? "active" : "").trim())}>${escape(label)}</a> </li>`;
-  })} <li class="p-4">${validate_component(ThemeSwitch, "ThemeSwitch").$$render($$result, {}, {}, {})}</li>` : `${each(landingLinks, ([path, label]) => {
+  })}` : `${each(landingLinks, ([path, label]) => {
     return `<li class="p-4"><a${add_attribute("href", path, 0)}>${escape(label)}</a></li>`;
   })}`}</ul></div> <div class="navbar-end">${validate_component(LoginBadge, "LoginBadge").$$render($$result, {}, {}, {})}</div></div></nav>`;
 });
 const Footer = create_ssr_component(($$result, $$props, $$bindings, slots) => {
-  return ` <footer class="footer footer-center bg-base-300 py-8 text-base-content" data-svelte-h="svelte-hxa3zz"><div><p class="font-bold">mind.ai</p> <p>Cultivating Brilliant Ideas Since 2009</p> <p>modible - 2024 - All right reserved</p></div> <div><div class="grid grid-flow-col gap-4"><a href="/"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" class="fill-current"><path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z"></path></svg></a> <a href="/"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" class="fill-current"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"></path></svg></a> <a href="/"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" class="fill-current"><path d="M9 8h-3v4h3v12h5v-12h3.642l.358-4h-4v-1.667c0-.955.192-1.333 1.115-1.333h2.885v-5h-3.808c-3.596 0-5.192 1.583-5.192 4.615v3.385z"></path></svg></a></div></div></footer>`;
+  return `  <footer class="footer footer-center bg-base-300 py-8 text-base-content"><div><p class="font-bold" data-svelte-h="svelte-122hi0w">mind.ai</p> <p>Cultivating Brilliant Ideas Since 2009 - ${validate_component(ThemeSwitch, "ThemeSwitch").$$render($$result, {}, {}, {})}</p> <p data-svelte-h="svelte-hok76l">modible - 2024 - All right reserved</p></div> <div data-svelte-h="svelte-5z7uuo"><div class="grid grid-flow-col gap-4"><a href="/"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" class="fill-current"><path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z"></path></svg></a> <a href="/"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" class="fill-current"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"></path></svg></a> <a href="/"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" class="fill-current"><path d="M9 8h-3v4h3v12h5v-12h3.642l.358-4h-4v-1.667c0-.955.192-1.333 1.115-1.333h2.885v-5h-3.808c-3.596 0-5.192 1.583-5.192 4.615v3.385z"></path></svg></a></div></div></footer>`;
 });
 new PocketBase(`$("http://localhost:8090/")`);
 const Layout = create_ssr_component(($$result, $$props, $$bindings, slots) => {
