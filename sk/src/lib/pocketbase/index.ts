@@ -3,15 +3,15 @@ import PocketBase, {
   Record as PBRecord,
   type AuthProviderInfo,
   RecordService,
-} from "pocketbase";
-import type { Admin } from "pocketbase";
-import { readable, type Readable, type Subscriber } from "svelte/store";
-import { browser } from "$app/environment";
-import { base } from "$app/paths";
-import { invalidateAll } from "$app/navigation";
+} from 'pocketbase';
+import type { Admin } from 'pocketbase';
+import { readable, type Readable, type Subscriber } from 'svelte/store';
+import { browser } from '$app/environment';
+import { base } from '$app/paths';
+import { invalidateAll } from '$app/navigation';
 
 export const client = new PocketBase(
-  browser ? window.location.origin + "/" + base : undefined
+  browser ? window.location.origin + '/' + base : undefined
 );
 
 export const authModel = readable<PBRecord | Admin | null>(
@@ -32,9 +32,9 @@ export async function login(
 ) {
   if (register) {
     const user = { ...rest, email, password, confirmPassword: password };
-    await client.collection("users").create(user);
+    await client.collection('users').create(user);
   }
-  await client.collection("users").authWithPassword(email, password);
+  await client.collection('users').authWithPassword(email, password);
 }
 
 export function logout() {
@@ -64,7 +64,7 @@ export async function savePostWithTags(
   // Separate tags from the main record data
   const { tags: tagsStr, ...postData } = record;
   const tags = tagsStr
-    .split(",")
+    .split(',')
     .map((tag: string) => tag.trim())
     .filter((tag: any) => tag);
 
@@ -119,8 +119,8 @@ function object2formdata(obj: {}) {
       fd.append(key, val);
     } else if (Array.isArray(val)) {
       // for some reason, multipart/form-data wants arrays to be comma-separated strings
-      fd.append(key, val.join(","));
-    } else if (typeof val === "object") {
+      fd.append(key, val.join(','));
+    } else if (typeof val === 'object') {
       fd.append(key, JSON.stringify(val));
     } else {
       fd.append(key, val as any);
@@ -154,7 +154,7 @@ export function watch<T>(
       .then((r) => set((result = r as ListResult<T>)));
     // watch for changes (only if you're in the browser)
     if (realtime)
-      collection.subscribe("*", ({ action, record }) => {
+      collection.subscribe('*', ({ action, record }) => {
         (async function (action: string) {
           // see https://github.com/pocketbase/pocketbase/discussions/505
           async function expand(expand: any, record: any) {
@@ -163,12 +163,12 @@ export function watch<T>(
               : record;
           }
           switch (action) {
-            case "update":
+            case 'update':
               record = await expand(queryParams.expand, record);
               return result.items.map((item) =>
                 (item as { id: string }).id === record.id ? record : item
               );
-            case "create":
+            case 'create':
               record = await expand(queryParams.expand, record);
               const index = result.items.findIndex(
                 (item: any) => item.id === record.id
@@ -183,7 +183,7 @@ export function watch<T>(
               // Append the new record to the result items array
               result.items.push(record as T);
               break; // Use 'break' to exit the switch case after adding the item
-            case "delete":
+            case 'delete':
               // Filter out the deleted record from the result items array
               result.items = result.items.filter(
                 (item) => (item as any).id !== record.id
@@ -233,8 +233,8 @@ export async function providerLogin(
   if (!record.avatar && meta?.avatarUrl) {
     const response = await fetch(meta.avatarUrl);
     if (response.ok) {
-      const type = response.headers.get("content-type") ?? "image/jpeg";
-      changes.avatar = new File([await response.blob()], "avatar", { type });
+      const type = response.headers.get('content-type') ?? 'image/jpeg';
+      changes.avatar = new File([await response.blob()], 'avatar', { type });
     }
   }
   if (Object.keys(changes).length) {

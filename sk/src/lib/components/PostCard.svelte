@@ -1,13 +1,15 @@
 <script lang="ts">
-  import type { PostsResponse, SubpostsResponse } from '$lib/pocketbase/generated-types';
-  import Markdown from 'svelte-markdown';
-  import TagGroup from '$lib/components/TagGroup.svelte';
+  import type {
+    PostsResponse,
+    SubpostsResponse,
+  } from '$lib/pocketbase/generated-types';
   import { client } from '$lib/pocketbase';
   import { onMount, createEventDispatcher } from 'svelte';
   import { fetchSubpostsByPostId } from '$lib/services/postService';
   import { goto } from '$app/navigation';
 
   export let post: PostsResponse;
+  export let featuredImage: string = ''; // Add this line to accept the featured image URL as a prop
 
   let subposts: SubpostsResponse[] = [];
   let errorMessage: string = '';
@@ -17,12 +19,8 @@
   async function fetchSubPosts() {
     try {
       const postID = post.id;
-      console.log('Post ID:', postID);
-
       subposts = await fetchSubpostsByPostId(postID);
-      console.log('Filtered Subposts:', subposts);
     } catch (error) {
-      console.error('Failed to fetch subposts:', error);
       errorMessage = 'Failed to load subposts';
     }
   }
@@ -33,11 +31,9 @@
 
     try {
       await client.collection('posts').delete(post.id);
-      console.log('Post deleted successfully');
       dispatch('postDeleted', { id: post.id });
       goto('/remember');
     } catch (error) {
-      console.error('Failed to delete post:', error);
       errorMessage = 'Failed to delete post';
     }
   }
@@ -49,71 +45,65 @@
   });
 </script>
 
-<div
-  class="card border-secondary bg-base-100 m-4 flex flex-col justify-between border shadow-xl"
+<article
+  class="relative isolate flex max-w-xl flex-col overflow-hidden shadow-lg bg-primary transition-shadow hover:shadow-2xl"
 >
-  <figure class="w-full">
-    {#if post.expand?.featuredImage}
+  <div class="relative h-48 w-full ">
+    {#if featuredImage}
+      <img
+        src={featuredImage}
+        alt={post.title}
+        class="absolute inset-0 h-full w-full object-cover"
+      />
+    {:else if post.expand?.featuredImage}
       {@const imageRecord = post.expand.featuredImage}
       {@const imageUrl = imageRecord?.file ? client.getFileUrl(imageRecord, imageRecord.file) : ''}
       <img
         src={imageUrl}
         alt={post.title}
-        class="aspect-[16/9] w-full rounded-t-lg object-cover sm:aspect-[2/1] lg:aspect-[3/2]"
+        class="absolute inset-0 h-full w-full object-cover"
       />
     {:else}
       <img
         src="https://via.placeholder.com/800x400.png?text=AI+Blog"
         alt="Placeholder"
-        class="aspect-[16/9] w-full rounded-t-lg object-cover sm:aspect-[2/1] lg:aspect-[3/2]"
+        class="absolute inset-0 h-full w-full object-cover"
       />
     {/if}
-  </figure>
-  <div class="p-4">
-    <div class="prose items-center">
-      {#if post?.updated}
-        <time datetime={post.updated} class="text-accent"
-          >{new Date(post.updated).toLocaleDateString()}</time
-        >
-      {/if}
-    </div>
-    <div class="group relative px-2">
-      {#if post?.title}
-        <a
-          href={`/posts/${post.slug}`}
-          class="prose-lg text-primary hover:text-secondary font-bold"
-          >{post.title}</a
-        >
-      {/if}
-      {#if post?.blogSummary}
-        <div class="prose-sm text-base-content mt-3 line-clamp-6 text-justify">
-          <Markdown source={post.blogSummary} />
-        </div>
-      {/if}
-    </div>
-  </div>
-  <div class="p-4">
-    <TagGroup post={post} />
-    <div class="card-actions mt-4 justify-between">
-      <a class="btn btn-outline" href={`/posts/${post.slug}/edit`}>Edit</a>
-      <a class="btn btn-outline" href={`/posts/${post.slug}/inspire`}>Inspire</a>
-      <button
-        class="btn btn-outline btn-secondary"
-        on:click={deletePost}
-      >Delete</button>
-    </div>
+    <div class="from-primary to-secondary absolute inset-0 bg-gradient-to-b opacity-80"></div>
   </div>
 
-  <div class="p-4">
-    {#if subposts.length > 0}
-      <h3 class="text-lg font-semibold mt-4">Subposts</h3>
-      <ul class="list-none p-0">
-        {#each subposts as subpost}
-          <li class="m-1">
-            <a href={`/subposts/${subpost.slug}`} class="text-sm link link-primary">{subpost.title}</a>
-          </li>
-        {/each}
-      </ul>
-    {/if}
+  <div class="p-8">
+    <div class="text-accent flex items-center justify-between text-xs">
+      {#if post?.updated}
+        <time datetime={post.updated} class="text-primary-content">
+          {new Date(post.updated).toLocaleDateString()}
+        </time>
+      {/if}
+      {#if post.expand && post.expand.tags[0]}
+        <a
+          href={`/tags/${post.expand.tags[0].title}`}
+          class="bg-secondary text-secondary-content hover:bg-accent hover:text-accent-content relative z-10 rounded-md px-2 py-1 font-medium"
+        >
+          {post.expand.tags[0].title}
+        </a>
+      {/if}
+    </div>
+
+    <div class="mt-4">
+      <h3
+        class="text-primary-content group-hover:text-accent-content text-lg font-semibold leading-6 text-center"
+      >
+        {#if post.slug}
+          <a href={`/posts/${post.slug}`}>
+            <span class="absolute inset-0"></span>
+            {post.title}
+          </a>
+        {/if}
+      </h3>
+      <p class="text-secondary-content mt-5 text-sm leading-6 text-justify ">
+        {post.blogSummary}
+      </p>
+    </div>
   </div>
-</div>
+</article>

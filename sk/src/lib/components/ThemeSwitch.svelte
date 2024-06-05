@@ -1,43 +1,47 @@
 <script>
-  import { theme } from "$lib/stores/themeStore";
-  import { themes } from "$lib/utils/themes";
-  import { createEventDispatcher, onMount } from "svelte";
+import { theme } from '$lib/stores/themeStore';
+import { themes } from '$lib/utils/themes';
+import { createEventDispatcher, onMount } from 'svelte';
 
-  const dispatch = createEventDispatcher();
+const dispatch = createEventDispatcher();
 
-  /**
-   * @param {string} themeId
-   */
-  function changeTheme(themeId) {
-    theme.set(themeId);
-    localStorage.setItem('theme', themeId); // Ensure the theme is stored
-    console.log("Theme changed to:", themeId);
-    dispatch('themeSelected');
+/**
+ * @param {string} themeId
+ */
+function changeTheme(themeId) {
+  theme.set(themeId);
+  localStorage.setItem('theme', themeId); // Ensure the theme is stored
+  console.log('Theme changed to:', themeId);
+  dispatch('themeSelected');
+}
+
+onMount(() => {
+  const savedTheme = localStorage.getItem('theme');
+  if (savedTheme) {
+    theme.set(savedTheme);
+    console.log('Loaded saved theme:', savedTheme);
   }
-
-  onMount(() => {
-    const savedTheme = localStorage.getItem("theme");
-    if (savedTheme) {
-      theme.set(savedTheme);
-      console.log("Loaded saved theme:", savedTheme);
-    }
-  });
+});
 </script>
 
 <div class="grid grid-cols-1 gap-4 py-4 md:grid-cols-2 lg:grid-cols-3">
   {#each themes as theme (theme.id)}
     <button
-      class="cursor-pointer overflow-hidden rounded-lg border border-base-content/20 shadow-md hover:shadow-lg transition-shadow duration-300"
+      class="cursor-pointer overflow-hidden rounded-lg border border-base-content/20 shadow-md transition-shadow duration-300 hover:shadow-lg"
       on:click={() => changeTheme(theme.id)}
     >
       <div
         data-theme={theme.id}
-        class="w-full bg-base-100 font-sans text-base-content p-2"
+        class="w-full bg-base-100 p-2 font-sans text-base-content"
       >
         <div class="grid grid-cols-5 grid-rows-3 gap-2">
-          <div class="col-start-1 row-span-2 row-start-1 bg-base-200 rounded"></div>
-          <div class="col-start-1 row-start-3 bg-base-300 rounded"></div>
-          <div class="col-span-4 col-start-2 row-span-3 row-start-1 flex flex-col gap-1 bg-base-100 p-2 rounded">
+          <div
+            class="col-start-1 row-span-2 row-start-1 rounded bg-base-200"
+          ></div>
+          <div class="col-start-1 row-start-3 rounded bg-base-300"></div>
+          <div
+            class="col-span-4 col-start-2 row-span-3 row-start-1 flex flex-col gap-1 rounded bg-base-100 p-2"
+          >
             <div class="font-bold">{theme.name}</div>
             <div class="flex flex-wrap gap-1">
               <div

@@ -1,20 +1,20 @@
 <script lang="ts" context="module">
-import { beforeNavigate } from "$app/navigation";
-import { metadata } from "$lib/app/stores";
-import { site } from "$lib/config";
-import PocketBase from "pocketbase";
+import { beforeNavigate } from '$app/navigation';
+import { metadata } from '$lib/app/stores';
+import { site } from '$lib/config';
+import PocketBase from 'pocketbase';
 
 // Initialize PocketBase client
 const pb = new PocketBase(`$(import.meta.env.VITE_APP_BASE_URL)`);
 </script>
 
 <script lang="ts">
-import "../app.scss";
-import Alerts from "$lib/components/Alerts.svelte";
-import Nav from "$lib/components/Nav.svelte";
-import Footer from "$lib/components/Footer.svelte";
+import '../app.scss';
+import Alerts from '$lib/components/Alerts.svelte';
+import Nav from '$lib/components/Nav.svelte';
+import Footer from '$lib/components/Footer.svelte';
 
-$: title = $metadata.title ? $metadata.title + " | " + site.name : site.name;
+$: title = $metadata.title ? $metadata.title + ' | ' + site.name : site.name;
 $: description = $metadata.description ?? site.description;
 $: headline = $metadata.headline ?? $metadata.title;
 

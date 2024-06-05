@@ -1,40 +1,40 @@
 <script lang="ts">
-import { goto } from "$app/navigation";
-import { page } from "$app/stores";
-import { onMount } from "svelte";
-import { postsStore } from "$lib/stores/postStore";
-import { updatePost, fetchPostBySlug } from "$lib/services/postService";
-import type { PostsResponse } from "$lib/pocketbase/generated-types";
-import Markdown from "svelte-markdown";
+import { goto } from '$app/navigation';
+import { page } from '$app/stores';
+import { onMount } from 'svelte';
+import { postsStore } from '$lib/stores/postStore';
+import { updatePost, fetchPostBySlug } from '$lib/services/postService';
+import type { PostsResponse } from '$lib/pocketbase/generated-types';
+import Markdown from 'svelte-markdown';
 import {
   generateTextFromChatGPT,
   generateImageFromDalle,
   ensureTagsExist,
-} from "$lib/utils/api";
+} from '$lib/utils/api';
 import {
   promptFormat,
   titlePrompt,
   tagPrompt,
   blogSummaryPrompt,
-} from "$lib/utils/prompts";
-import LoginGuard from "$lib/components/LoginGuard.svelte";
+} from '$lib/utils/prompts';
+import LoginGuard from '$lib/components/LoginGuard.svelte';
 let post: PostsResponse | undefined;
-let tagString = "";
+let tagString = '';
 $: slug = $page.params.slug;
-console.log("Received slug:", slug);
+console.log('Received slug:', slug);
 // Check the received slug value
 onMount(async () => {
   try {
     post = await fetchPostBySlug(slug);
     if (!post) {
-      console.log("Post not found");
+      console.log('Post not found');
       // Handle the case when the post is not found
       // For example, you can redirect to a 404 page or show an error message
     } else {
-      tagString = post.tags ? post.tags.join(", ") : "";
+      tagString = post.tags ? post.tags.join(', ') : '';
     }
   } catch (error) {
-    console.error("Error fetching post:", error);
+    console.error('Error fetching post:', error);
     // Handle the error case // For example, you can show an error message to the user
   }
 });
@@ -46,7 +46,7 @@ async function submit(e: SubmitEvent) {
   if (!post) return;
 
   const tagsArray = tagString
-    .split(",")
+    .split(',')
     .map((tag) => tag.trim())
     .filter((tag) => tag.length > 0);
 
@@ -76,7 +76,7 @@ async function updatePostsTagsRelationships(
 
 async function generateFromChatGPT(userPrompt: string) {
   if (userPrompt.length === 0) {
-    alert("Please enter a prompt to generate from.");
+    alert('Please enter a prompt to generate from.');
     return;
   } else if (!post) return;
 
@@ -90,11 +90,11 @@ async function generateFromChatGPT(userPrompt: string) {
   const titleResponse = await generateTextFromChatGPT(
     titlePrompt + "This is the user's article: '" + bodyResponse + "'"
   );
-  post.title = titleResponse.replace(/["']/g, "");
+  post.title = titleResponse.replace(/["']/g, '');
   post.slug = titleResponse
     .toLowerCase()
-    .replace(/\s+/g, "-")
-    .replace(/["':]/g, "")
+    .replace(/\s+/g, '-')
+    .replace(/["':]/g, '')
     .substring(0, 50);
 
   const tagsResponse = await generateTextFromChatGPT(
@@ -108,7 +108,7 @@ async function generateFromChatGPT(userPrompt: string) {
   post.blogSummary = blogSummaryResponse;
 
   const imageResponse = await generateImageFromDalle(
-    titleResponse + "  " + tagsResponse
+    titleResponse + '  ' + tagsResponse
   );
 
   return {

@@ -1,39 +1,39 @@
 <script lang="ts">
-import { metadata } from "$lib/app/stores";
-import Image from "$lib/components/Image.svelte";
-import { authModel, watch } from "$lib/pocketbase";
-import type { PostsResponse } from "$lib/pocketbase/generated-types";
-import { alertOnFailure } from "$lib/pocketbase/ui";
-import { client } from "$lib/pocketbase";
-import Markdown from "svelte-markdown";
-import { onMount } from "svelte";
-import { postsStore } from "$lib/stores/postStore";
-import { fetchPosts } from "$lib/services/postService";
-import { goto } from "$app/navigation";
-import LoginGuard from "$lib/components/LoginGuard.svelte";
+import { metadata } from '$lib/app/stores';
+import Image from '$lib/components/Image.svelte';
+import { authModel, watch } from '$lib/pocketbase';
+import type { PostsResponse } from '$lib/pocketbase/generated-types';
+import { alertOnFailure } from '$lib/pocketbase/ui';
+import { client } from '$lib/pocketbase';
+import Markdown from 'svelte-markdown';
+import { onMount } from 'svelte';
+import { postsStore } from '$lib/stores/postStore';
+import { fetchPosts } from '$lib/services/postService';
+import { goto } from '$app/navigation';
+import LoginGuard from '$lib/components/LoginGuard.svelte';
 
 async function getFeaturedImageUrl(post: any) {
   if (post.featuredImage) {
-    const image = await client.collection("images").getOne(post.featuredImage);
+    const image = await client.collection('images').getOne(post.featuredImage);
     if (image && image.file) {
       return client.getFileUrl(image, image.file);
     }
   }
-  return "https://via.placeholder.com/800x400.png?text=AI+Blog";
+  return 'https://via.placeholder.com/800x400.png?text=AI+Blog';
 }
 
 async function deleteAllPosts() {
   alertOnFailure(async () => {
-    const postsResponse = await client.collection("posts").getList();
+    const postsResponse = await client.collection('posts').getList();
     for (const post of postsResponse.items) {
-      await client.collection("posts").delete(post.id);
+      await client.collection('posts').delete(post.id);
     }
     // Optionally, refresh the posts list or navigate as needed
   });
 }
 
-$metadata.title = "AI powered note taking";
-$metadata.description = "AI powered note taking";
+$metadata.title = 'AI powered note taking';
+$metadata.description = 'AI powered note taking';
 
 let posts: PostsResponse[] = [];
 
@@ -48,7 +48,7 @@ onMount(async () => {
 <LoginGuard>
   {#each posts as post (post.id)}
     <div
-      class="card bg-base-300 flex w-full flex-col justify-between p-4 shadow-xl"
+      class="card flex w-full flex-col justify-between bg-base-300 p-4 shadow-xl"
     >
       <div>
         <figure>
@@ -73,12 +73,12 @@ onMount(async () => {
           <div class="group relative mt-3">
             <a
               href={`/posts/${post.slug}`}
-              class="prose-lg text-primary line-clamp-2 font-bold"
+              class="prose-lg line-clamp-2 font-bold text-primary"
             >
               {post.title}
             </a>
             <div
-              class="prose-sm text-base-content mt-3 line-clamp-6 text-justify"
+              class="prose-sm mt-3 line-clamp-6 text-justify text-base-content"
             >
               <Markdown source={post.blogSummary || post.body} />
             </div>
@@ -89,7 +89,7 @@ onMount(async () => {
   {/each}
   {#if posts.length === 0}
     <div
-      class="card bg-base-300 flex w-full flex-col justify-between p-4 shadow-xl"
+      class="card flex w-full flex-col justify-between bg-base-300 p-4 shadow-xl"
     >
       <div>
         <div class="m-4 max-w-xl">

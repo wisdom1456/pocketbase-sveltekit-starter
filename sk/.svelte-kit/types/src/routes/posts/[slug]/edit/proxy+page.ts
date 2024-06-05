@@ -1,24 +1,24 @@
 // @ts-nocheck
-import { client } from "$lib/pocketbase";
-import type { PostsRecord } from "$lib/pocketbase/generated-types";
-import type { PageLoad } from "./$types";
-import { goto } from "$app/navigation";
-import { metadata } from "$lib/app/stores";
-import { authModel, save } from "$lib/pocketbase";
-import type { PageData } from "./$types";
+import { client } from '$lib/pocketbase';
+import type { PostsRecord } from '$lib/pocketbase/generated-types';
+import type { PageLoad } from './$types';
+import { goto } from '$app/navigation';
+import { metadata } from '$lib/app/stores';
+import { authModel, save } from '$lib/pocketbase';
+import type { PageData } from './$types';
 
 export const load = async function ({ params }: Parameters<PageLoad>[0]) {
   const { slug } = params;
 
   try {
     const { items } = await client
-      .collection("posts")
+      .collection('posts')
       .getList(undefined, undefined, {
         filter: `slug='${slug}'`,
       });
 
     if (items.length === 0) {
-      throw new Error("Post not found");
+      throw new Error('Post not found');
     }
 
     const post: {
@@ -43,11 +43,11 @@ export const load = async function ({ params }: Parameters<PageLoad>[0]) {
       prompt: string;
     };
 
-    let featuredImageUrl = "";
+    let featuredImageUrl = '';
 
     if (post.featuredImage) {
       const image = await client
-        .collection("images")
+        .collection('images')
         .getOne(post.featuredImage);
 
       if (image && image.file) {
@@ -57,7 +57,7 @@ export const load = async function ({ params }: Parameters<PageLoad>[0]) {
 
     return { post, featuredImageUrl };
   } catch (error) {
-    console.error("Error fetching post:", error);
+    console.error('Error fetching post:', error);
     throw error;
   }
 };

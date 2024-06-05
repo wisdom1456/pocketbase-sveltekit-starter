@@ -1,23 +1,23 @@
 <script lang="ts">
-import { metadata } from "$lib/app/stores";
-import { fade, fly } from "svelte/transition";
-import Particles from "svelte-particles";
-import { loadSlim } from "tsparticles-slim";
+import { metadata } from '$lib/app/stores';
+import { fade, fly } from 'svelte/transition';
+import Particles from 'svelte-particles';
+import { loadSlim } from 'tsparticles-slim';
 
 $metadata.title =
-  "Transform Your Thoughts into a Flourishing Mind Garden with AI";
+  'Transform Your Thoughts into a Flourishing Mind Garden with AI';
 
 $metadata.description =
-  "Join thousands who are already turning their thoughts into thriving mindscapes using our unique AI-powered platform.";
+  'Join thousands who are already turning their thoughts into thriving mindscapes using our unique AI-powered platform.';
 
 let particlesConfig = {
   particles: {
     color: {
-      value: "#ffffff",
+      value: '#ffffff',
     },
     links: {
       enable: true,
-      color: "#ffffff",
+      color: '#ffffff',
     },
     move: {
       enable: true,
@@ -33,7 +33,7 @@ let particlesConfig = {
     events: {
       onhover: {
         enable: true,
-        mode: "repulse",
+        mode: 'repulse',
       },
     },
   },

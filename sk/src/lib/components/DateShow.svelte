@@ -9,7 +9,7 @@ let dt: Date,
   dom: string,
   dowName: string,
   monName: string;
-const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 $: {
   dt = new Date(date);
@@ -17,7 +17,7 @@ $: {
   // dom = dt.getDate();
   // dow = dt.getDay();
   // mon = dt.getMonth();
-  [dowName, monName, dom, year] = dt.toDateString().split(" ");
+  [dowName, monName, dom, year] = dt.toDateString().split(' ');
 }
 </script>
 

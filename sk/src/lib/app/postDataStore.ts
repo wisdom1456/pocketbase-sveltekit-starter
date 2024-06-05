@@ -1,5 +1,5 @@
 // postDataStore.ts
-import { writable } from "svelte/store";
+import { writable } from 'svelte/store';
 
 interface PostData {
   title: string;
@@ -13,12 +13,12 @@ interface PostData {
 }
 
 export const postData = writable<PostData>({
-  title: "",
-  slug: "",
-  body: "",
-  blogSummary: "",
-  featuredImage: "",
-  prompt: "",
-  userid: "",
+  title: '',
+  slug: '',
+  body: '',
+  blogSummary: '',
+  featuredImage: '',
+  prompt: '',
+  userid: '',
   tags: [],
 });

@@ -42,9 +42,6 @@
 	"/profile": [
 		"src/routes/+layout.ts"
 	],
-	"/reflect": [
-		"src/routes/+layout.ts"
-	],
 	"/remember": [
 		"src/routes/+layout.ts"
 	],

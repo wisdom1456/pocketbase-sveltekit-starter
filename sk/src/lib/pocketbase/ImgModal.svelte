@@ -1,7 +1,7 @@
 <script lang="ts">
-import type { Record } from "pocketbase";
-import { client } from ".";
-import Dialog from "$lib/components/Dialog.svelte";
+import type { Record } from 'pocketbase';
+import { client } from '.';
+import Dialog from '$lib/components/Dialog.svelte';
 
 export let record: Record;
 export let filename: string;

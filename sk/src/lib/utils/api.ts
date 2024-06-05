@@ -1,9 +1,10 @@
 // src/lib/utils/api.ts
 // Improved error handling and abstraction of API URL and parameters
-import { env } from "$env/dynamic/public";
-import { client } from "$lib/pocketbase";
+import { env } from '$env/dynamic/public';
+import { client } from '$lib/pocketbase';
+import { progress } from '../stores/progressStore';
 
-const engineId = "stable-diffusion-v1-6";
+const engineId = 'stable-diffusion-v1-6';
 const apiHost = import.meta.env.VITE_STABILITY_API_HOST;
 
 const API_BASE_URL = import.meta.env.VITE_APP_BASE_URL;
@@ -14,49 +15,49 @@ const DALLE_KEY = import.meta.env.VITE_CHATGPT_API_KEY;
 
 // Validate that keys are present
 if (!API_BASE_URL) {
-  throw new Error("Missing APP_BASE_URL");
+  throw new Error('Missing APP_BASE_URL');
 }
 if (!CHATGPT_KEY) {
-  throw new Error("Missing CHATGPT_API_KEY");
+  throw new Error('Missing CHATGPT_API_KEY');
 }
 if (!SD_KEY) {
-  throw new Error("Missing STABILITY_API_KEY");
+  throw new Error('Missing STABILITY_API_KEY');
 }
 if (!CLAUDE_KEY) {
-  throw new Error("Missing ANTHROPIC_API_KEY");
+  throw new Error('Missing ANTHROPIC_API_KEY');
 }
 if (!DALLE_KEY) {
-  throw new Error("Missing DALLE_API_KEY");
+  throw new Error('Missing DALLE_API_KEY');
 }
 
 export const availableServices = [
   {
-    name: "Anthropic",
+    name: 'Anthropic',
     models: [
-      "claude-3-haiku-20240307",
-      "claude-3-sonnet-20240229",
-      "claude-3-opus-20240229",
-      "claude-2.1",
-      "claude-2.0",
-      "claude-instant-1.2",
+      'claude-3-haiku-20240307',
+      'claude-3-sonnet-20240229',
+      'claude-3-opus-20240229',
+      'claude-2.1',
+      'claude-2.0',
+      'claude-instant-1.2',
     ],
   },
   {
-    name: "OpenAI",
-    models: ["gpt-4o", "gpt-4-turbo-preview", "gpt-3.5-turbo"],
+    name: 'OpenAI',
+    models: ['gpt-4o', 'gpt-4-turbo-preview', 'gpt-3.5-turbo'],
   },
   {
-    name: "DreamStudio",
-    models: ["text-to-image"],
-  }
+    name: 'DreamStudio',
+    models: ['text-to-image'],
+  },
 ];
 
 export async function apiRequest<T>(
   endpoint: string,
-  method: "GET" | "POST" = "GET",
+  method: 'GET' | 'POST' = 'GET',
   body: any = null
 ): Promise<T> {
-  const headers = { "Content-Type": "application/json" };
+  const headers = { 'Content-Type': 'application/json' };
   const config: RequestInit = { method, headers };
 
   if (body) {
@@ -75,68 +76,68 @@ export async function apiRequest<T>(
     return await response.json();
   } catch (error) {
     // Log the error to an error reporting service if you have one
-    console.error("API Request failed:", error);
+    console.error('API Request failed:', error);
     throw error;
   }
 }
 
 export async function ensureTagsExist(tags: string[]): Promise<string[]> {
-  const existingTags = await client.collection("tags").getFullList({
-    filter: tags.map((tag) => `title = "${tag}"`).join(" || "),
+  const existingTags = await client.collection('tags').getFullList({
+    filter: tags.map((tag) => `title = "${tag}"`).join(' || '),
   });
 
   const existingTagTitles = existingTags.map((tag) => tag.title);
   const newTagTitles = tags.filter((tag) => !existingTagTitles.includes(tag));
 
-  console.log("New tags", newTagTitles);
+  console.log('New tags', newTagTitles);
 
   client.autoCancellation(false);
   // Create new tags with retries
   const newTags = await Promise.all(
-    newTagTitles.map((title) => client.collection("tags").create({ title }))
+    newTagTitles.map((title) => client.collection('tags').create({ title }))
   );
   client.autoCancellation(true);
 
-  console.log("Created new tags", newTags);
+  console.log('Created new tags', newTags);
 
   return [...existingTags, ...newTags].map((tag) => tag.id);
 }
 
 export async function getTagsForPost(slug: string): Promise<string> {
   try {
-    console.log("Fetching tags for post", slug);
+    console.log('Fetching tags for post', slug);
     const postsResponse = await client
-      .collection("posts")
+      .collection('posts')
       .getFirstListItem(`slug = "${slug}"`, {
-        expand: "tags",
+        expand: 'tags',
       });
     if (!postsResponse) {
-      return "";
+      return '';
     }
 
     const tags =
       postsResponse.expand?.tags?.map((tag: { title: any }) => tag.title) || [];
-    console.log("Tags for post", slug, tags);
-    return tags.join(", ");
+    console.log('Tags for post', slug, tags);
+    return tags.join(', ');
   } catch (error) {
-    console.error("Error fetching tags:", error);
-    return "";
+    console.error('Error fetching tags:', error);
+    return '';
   }
 }
 
 export async function generateTextFromClaude(prompt: string): Promise<string> {
   try {
-    console.log("Generating text from Claude", prompt);
-    const response = await fetch("/api/anthropic", {
-      method: "POST",
+    console.log('Generating text from Claude', prompt);
+    const response = await fetch('/api/anthropic', {
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         human: prompt,
       }),
     });
-    console.log("Response from Claude", response);
+    console.log('Response from Claude', response);
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -145,7 +146,7 @@ export async function generateTextFromClaude(prompt: string): Promise<string> {
     const data = await response.json();
     return data.response;
   } catch (error) {
-    console.error("Error:", error);
+    console.error('Error:', error);
     throw error;
   }
 }
@@ -153,28 +154,28 @@ export async function generateTextFromClaude(prompt: string): Promise<string> {
 export async function generateImageFromDalle(prompt: string): Promise<string> {
   try {
     const response = await fetch(
-      "https://api.openai.com/v1/images/generations",
+      'https://api.openai.com/v1/images/generations',
       {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
           Authorization: `Bearer ${DALLE_KEY}`,
         },
         body: JSON.stringify({
-          model: "image-alpha-001",
+          model: 'image-alpha-001',
           prompt: prompt,
           num_images: 1,
-          size: "512x512",
-          response_format: "url",
+          size: '512x512',
+          response_format: 'url',
         }),
       }
     );
-    if (!response.ok) throw new Error("Failed to generate image from Dalle");
+    if (!response.ok) throw new Error('Failed to generate image from Dalle');
 
     const data = await response.json();
     return data.data[0].url;
   } catch (error) {
-    console.error("Error:", error);
+    console.error('Error:', error);
     throw error;
   }
 }
@@ -186,15 +187,15 @@ export async function generateImageFromDreamStudio(
     const response = await fetch(
       `https://api.stability.ai/v1/generation/${engineId}/text-to-image`,
       {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
           Authorization: `Bearer ${SD_KEY}`,
         },
         body: JSON.stringify({
           text_prompts: [{ text: prompt }],
           cfg_scale: 7,
-          clip_guidance_preset: "FAST_BLUE",
+          clip_guidance_preset: 'FAST_BLUE',
           height: 512,
           width: 512,
           samples: 1,
@@ -202,28 +203,28 @@ export async function generateImageFromDreamStudio(
         }),
       }
     );
-    console.log("Response from DreamStudio", response);
+    console.log('Response from DreamStudio', response);
     if (!response.ok)
-      throw new Error("Failed to generate image from DreamStudio");
+      throw new Error('Failed to generate image from DreamStudio');
     const data = await response.json();
     return data.artifacts[0].base64;
   } catch (error) {
-    console.error("Error:", error);
+    console.error('Error:', error);
     throw error;
   }
 }
 
 export async function generateTextFromChatGPT(prompt: string): Promise<string> {
   try {
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
         Authorization: `Bearer ${CHATGPT_KEY}`,
       },
       body: JSON.stringify({
-        model: "gpt-3.5-turbo",
-        messages: [{ role: "user", content: prompt }],
+        model: 'gpt-3.5-turbo',
+        messages: [{ role: 'user', content: prompt }],
         max_tokens: 1024,
         n: 1,
         stop: null,
@@ -231,11 +232,35 @@ export async function generateTextFromChatGPT(prompt: string): Promise<string> {
         top_p: 0.5,
       }),
     });
-    if (!response.ok) throw new Error("Failed to generate text from ChatGPT");
+    if (!response.ok) throw new Error('Failed to generate text from ChatGPT');
     const data = await response.json();
     return data.choices[0].message.content.trim();
   } catch (error) {
-    console.error("Error:", error);
+    console.error('Error:', error);
     throw error;
   }
+}
+
+export async function fetchWithProgress(
+  url: string,
+  options: RequestInit = {}
+): Promise<Blob> {
+  const response = await fetch(url, options);
+  if (!response.body) throw new Error('Response body is null');
+  const reader = response.body.getReader();
+  const contentLength = response.headers.get('Content-Length');
+  if (!contentLength) throw new Error('Content-Length header is missing');
+  const contentLengthNum = +contentLength;
+  let receivedLength = 0;
+  let chunks = [];
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    chunks.push(value);
+    receivedLength += value.length;
+    progress.set((receivedLength / parseFloat(contentLength)) * 100);
+  }
+
+  progress.set(100);
+  return new Blob(chunks);
 }

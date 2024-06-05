@@ -1,4 +1,4 @@
-import { c as create_ssr_component, v as validate_component, b as escape } from "../../../chunks/ssr.js";
+import { c as create_ssr_component, v as validate_component, d as escape } from "../../../chunks/ssr.js";
 import { L as LoginGuard } from "../../../chunks/LoginGuard.js";
 const Page = create_ssr_component(($$result, $$props, $$bindings, slots) => {
   let { data } = $$props;

@@ -1,9 +1,9 @@
 <script lang="ts">
-import { createEventDispatcher, onMount } from "svelte";
-import { availableServices } from "$lib/utils/api";
+import { createEventDispatcher, onMount } from 'svelte';
+import { availableServices } from '$lib/utils/api';
 
-export let selectedService: string = availableServices[0]?.name ?? "";
-export let selectedModel: string = availableServices[0]?.models[0] ?? "";
+export let selectedService: string = availableServices[0]?.name ?? '';
+export let selectedModel: string = availableServices[0]?.models[0] ?? '';
 
 const dispatch = createEventDispatcher();
 
@@ -11,25 +11,25 @@ const dispatch = createEventDispatcher();
 onMount(() => {
   if (!selectedService) {
     selectedService = availableServices[0].name;
-    dispatch("serviceChange", selectedService);
+    dispatch('serviceChange', selectedService);
   }
   if (!selectedModel) {
     selectedModel =
       availableServices.find((s) => s.name === selectedService)?.models[0] ??
-      "";
-    dispatch("modelChange", selectedModel);
+      '';
+    dispatch('modelChange', selectedModel);
   }
 });
 
 function handleServiceChange() {
-  dispatch("serviceChange", selectedService);
+  dispatch('serviceChange', selectedService);
   selectedModel =
-    availableServices.find((s) => s.name === selectedService)?.models[0] ?? "";
-  dispatch("modelChange", selectedModel);
+    availableServices.find((s) => s.name === selectedService)?.models[0] ?? '';
+  dispatch('modelChange', selectedModel);
 }
 
 function handleModelChange() {
-  dispatch("modelChange", selectedModel);
+  dispatch('modelChange', selectedModel);
 }
 </script>
 

@@ -1,6 +1,6 @@
 <script lang="ts">
-import type { PageData } from "./$types";
-import Changes from "./Changes.svelte";
+import type { PageData } from './$types';
+import Changes from './Changes.svelte';
 
 export let data: PageData;
 </script>

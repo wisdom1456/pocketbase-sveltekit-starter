@@ -1,7 +1,9 @@
-import { client } from "$lib/pocketbase";
+import { client } from '$lib/pocketbase';
 
-
-export async function createImage(imagePrompt: string, engineId: string): Promise<string | null> {
+export async function createImage(
+  imagePrompt: string,
+  engineId: string
+): Promise<string | null> {
   try {
     const response = await fetch('/api/dreamstudio', {
       method: 'POST',
@@ -14,7 +16,10 @@ export async function createImage(imagePrompt: string, engineId: string): Promis
 
     if (!response.ok) {
       const errorDetails = await response.json();
-      console.error(`Failed to generate image: ${response.statusText}`, errorDetails);
+      console.error(
+        `Failed to generate image: ${response.statusText}`,
+        errorDetails
+      );
       throw new Error(`Failed to generate image: ${response.statusText}`);
     }
 

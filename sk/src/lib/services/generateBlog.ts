@@ -1,13 +1,13 @@
-import { goto } from "$app/navigation";
-import { authModel, client, save } from "$lib/pocketbase";
-import { metadata } from "$lib/app/stores";
+import { goto } from '$app/navigation';
+import { authModel, client, save } from '$lib/pocketbase';
+import { metadata } from '$lib/app/stores';
 import type {
   PostsResponse,
   SubpostsRecord,
-} from "$lib/pocketbase/generated-types";
-import { ensureTagsExist, generateImageFromDreamStudio } from "$lib/utils/api";
-import { alertOnFailure } from "$lib/pocketbase/ui";
-import { callAPI } from "$lib/utils/apiUtils";
+} from '$lib/pocketbase/generated-types';
+import { ensureTagsExist, generateImageFromDreamStudio } from '$lib/utils/api';
+import { alertOnFailure } from '$lib/pocketbase/ui';
+import { callAPI } from '$lib/utils/apiUtils';
 import {
   promptFormat,
   titlePrompt,
@@ -16,11 +16,11 @@ import {
   imagePrompt,
   blogResponsePrompt,
   tagTreePrompt,
-} from "$lib/utils/prompts";
-import { serviceModelSelectionStore } from "$lib/app/stores";
-import { get } from "svelte/store";
-import { availableServices } from "$lib/utils/api";
-import { createPost } from "$lib/services/postService";
+} from '$lib/utils/prompts';
+import { serviceModelSelectionStore } from '$lib/app/stores';
+import { get } from 'svelte/store';
+import { availableServices } from '$lib/utils/api';
+import { createPost } from '$lib/services/postService';
 
 // Define the structure of the post data
 interface PostData {
@@ -61,12 +61,12 @@ export async function generateBlog(
   } */
 
   let post: PostData = {
-    title: "",
-    slug: "",
-    body: "",
-    blogSummary: "",
-    featuredImage: "",
-    prompt: "",
+    title: '',
+    slug: '',
+    body: '',
+    blogSummary: '',
+    featuredImage: '',
+    prompt: '',
     userid: authModel.id,
     tags: [],
   };
@@ -75,39 +75,29 @@ export async function generateBlog(
     const { selectedService, selectedModel } = get(serviceModelSelectionStore);
 
     // Generate content
-    post.body = await callAPI(
-      `${promptFormat}'${userInput}'`
-    );
-    post.title = await callAPI(
-      `${titlePrompt}'${post.body}'`
-    );
-    const tagString = await callAPI(
-      `${tagPrompt}'${post.body}'`
-    );
-    post.blogSummary = await callAPI(
-      `${blogSummaryPrompt}'${post.body}'`
-    );
+    post.body = await callAPI(`${promptFormat}'${userInput}'`);
+    post.title = await callAPI(`${titlePrompt}'${post.body}'`);
+    const tagString = await callAPI(`${tagPrompt}'${post.body}'`);
+    post.blogSummary = await callAPI(`${blogSummaryPrompt}'${post.body}'`);
 
     // Generate slug
     post.slug = post.title
       .toLowerCase()
-      .replace(/\s+/g, "-")
-      .replace(/[^\w-]+/g, "")
+      .replace(/\s+/g, '-')
+      .replace(/[^\w-]+/g, '')
       .substring(0, 50);
     post.prompt = userInput;
 
     // Save tags
     const tagsArray = tagString
-      .split(",")
+      .split(',')
       .map((tag) => tag.trim())
       .filter((tag) => tag);
     const tagIds = await ensureTagsExist(tagsArray);
     post.tags = tagIds;
 
     // Generate image
-    const imageResponseText = await callAPI(
-      `${imagePrompt}'${post.body}'`
-    );
+    const imageResponseText = await callAPI(`${imagePrompt}'${post.body}'`);
 
     // Create the post using the createPost function from postsService
     const createdPost = await createPost(
@@ -124,7 +114,7 @@ export async function generateBlog(
         }`
       );
     } else {
-      throw new Error("Failed to create the post.");
+      throw new Error('Failed to create the post.');
     }
   } catch (error) {
     alertOnFailure(async () => `Failed to generate and save post: ${error}`);
@@ -144,10 +134,10 @@ export async function generateBlogResponse(
   authModel: any
 ): Promise<GenerateBlogResponse> {
   let subpost: SubpostsRecord = {
-    title: "",
-    content: "",
+    title: '',
+    content: '',
     post: parentPostId,
-    slug: "",
+    slug: '',
   };
 
   try {
@@ -155,24 +145,26 @@ export async function generateBlogResponse(
 
     // Generate content and title concurrently
     const [content, title] = await Promise.all([
-      callAPI(
-        `${blogResponsePrompt} + "  " + '${userInput}'`
-      ),
+      callAPI(`${blogResponsePrompt} + "  " + '${userInput}'`),
       callAPI(`${titlePrompt}'${userInput}'`),
     ]);
 
     // Generate slug
     subpost.slug = title
       .toLowerCase()
-      .replace(/\s+/g, "-")
-      .replace(/[^\w-]+/g, "")
+      .replace(/\s+/g, '-')
+      .replace(/[^\w-]+/g, '')
       .substring(0, 50);
 
     subpost.content = content;
     subpost.title = title;
 
     // Create the subpost
-    const createdSubpost = await save("subposts", subpost as SubpostsRecord, true);
+    const createdSubpost = await save(
+      'subposts',
+      subpost as SubpostsRecord,
+      true
+    );
 
     // Return the created subpost as GenerateBlogResponse
     return {
@@ -187,7 +179,6 @@ export async function generateBlogResponse(
     throw error;
   }
 }
-
 
 export async function generateTagTree(
   tags: string,
@@ -219,14 +210,14 @@ export async function generateTagTree(
 function cleanTagTree(rawTagTree: string): string {
   // Remove intro and exit text
   const cleanedTagTree = rawTagTree
-    .replace(/^[\s\S]*?{/, "{")
-    .replace(/}[\s\S]*?$/, "}");
+    .replace(/^[\s\S]*?{/, '{')
+    .replace(/}[\s\S]*?$/, '}');
 
   // Validate and format the JSON
   try {
-    console.log("cleanedTagTree: ", cleanedTagTree);
+    console.log('cleanedTagTree: ', cleanedTagTree);
     const parsedTagTree = JSON.parse(cleanedTagTree);
-    console.log("parsedTagTree: ", parsedTagTree);
+    console.log('parsedTagTree: ', parsedTagTree);
     const formattedTagTree = JSON.stringify(parsedTagTree, null, 2);
     return formattedTagTree;
   } catch (error: any) {

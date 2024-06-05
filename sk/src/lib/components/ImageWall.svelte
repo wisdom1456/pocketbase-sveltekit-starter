@@ -1,37 +1,36 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import { client } from '$lib/pocketbase';
-  import type { ImagesResponse } from '$lib/pocketbase/generated-types';
-  
-  let images: ImagesResponse[] = [];
-  let imageWallList: string[] = [];
-  
-  onMount(async () => {
-    try {
-      const result = await client.collection('images').getList(1, 50);
-      images = result.items as ImagesResponse[];
-      updateImageWallList(images);
-    } catch (error) {
-      console.error('Error fetching images:', error);
-    }
-  });
-  
-  function updateImageWallList(images: ImagesResponse[]) {
-    imageWallList = images
-      .filter((image) => image.file)
-      .map((image) => client.files.getUrl(image, image.file!));
+import { onMount } from 'svelte';
+import { client } from '$lib/pocketbase';
+import type { ImagesResponse } from '$lib/pocketbase/generated-types';
+
+let images: ImagesResponse[] = [];
+let imageWallList: string[] = [];
+
+onMount(async () => {
+  try {
+    const result = await client.collection('images').getList(1, 50);
+    images = result.items as ImagesResponse[];
+    updateImageWallList(images);
+  } catch (error) {
+    console.error('Error fetching images:', error);
   }
-  
-  $: updateImageWallList(images);
-  </script>
-  
-  <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-    {#each imageWallList as pic}
-      <img src={pic} alt="Wall of images" class="h-auto w-full" />
-    {/each}
-  </div>
-  
-  <style>
-  /* Add relevant styles */
-  </style>
-  
+});
+
+function updateImageWallList(images: ImagesResponse[]) {
+  imageWallList = images
+    .filter((image) => image.file)
+    .map((image) => client.files.getUrl(image, image.file!));
+}
+
+$: updateImageWallList(images);
+</script>
+
+<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+  {#each imageWallList as pic}
+    <img src={pic} alt="Wall of images" class="h-auto w-full" />
+  {/each}
+</div>
+
+<style>
+/* Add relevant styles */
+</style>

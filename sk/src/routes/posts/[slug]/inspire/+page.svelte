@@ -1,122 +1,134 @@
 <script lang="ts">
-  import type { PostsResponse, SubpostsResponse } from "$lib/pocketbase/generated-types";
-  import { onMount } from "svelte";
-  import { page } from "$app/stores";
-  import { metadata, serviceModelSelectionStore } from "$lib/app/stores";
-  import { authModel, client } from "$lib/pocketbase";
-  import { fetchPostBySlug, fetchSubpostsByPostId } from "$lib/services/postService";
-  import { availableServices } from "$lib/utils/api";
-  import { generateBlogResponse } from "$lib/services/generateBlog";
-  import type { GenerateBlogResponse } from "$lib/services/generateBlog";
-  import Markdown from "svelte-markdown";
-  import TagGroup from "$lib/components/TagGroup.svelte";
-  import ServiceSelector from "$lib/components/ServiceSelector.svelte";
-  import LoginGuard from "$lib/components/LoginGuard.svelte";
-  import { base } from "$app/paths";
-  import { goto } from "$app/navigation";
+import type {
+  PostsResponse,
+  SubpostsResponse,
+} from '$lib/pocketbase/generated-types';
+import { onMount } from 'svelte';
+import { page } from '$app/stores';
+import { metadata, serviceModelSelectionStore } from '$lib/app/stores';
+import { authModel, client } from '$lib/pocketbase';
+import {
+  fetchPostBySlug,
+  fetchSubpostsByPostId,
+} from '$lib/services/postService';
+import { availableServices } from '$lib/utils/api';
+import { generateBlogResponse } from '$lib/services/generateBlog';
+import type { GenerateBlogResponse } from '$lib/services/generateBlog';
+import Markdown from 'svelte-markdown';
+import TagGroup from '$lib/components/TagGroup.svelte';
+import ServiceSelector from '$lib/components/ServiceSelector.svelte';
+import LoginGuard from '$lib/components/LoginGuard.svelte';
+import { base } from '$app/paths';
+import { goto } from '$app/navigation';
 
-  let post: PostsResponse | undefined;
-  let subposts: SubpostsResponse[] = [];
-  let selectedService = availableServices[0].name;
-  let selectedModel = availableServices[0].models[0];
-  let selectedBullets: string[] = [];
-  let processedBody = "";
-  $: slug = $page.params.slug;
+let post: PostsResponse | undefined;
+let subposts: SubpostsResponse[] = [];
+let selectedService = availableServices[0].name;
+let selectedModel = availableServices[0].models[0];
+let selectedBullets: string[] = [];
+let processedBody = '';
+$: slug = $page.params.slug;
 
-  onMount(async () => {
+onMount(async () => {
+  try {
+    post = await fetchPostBySlug(slug);
+    if (post) {
+      // Ensure post has expanded tags
+      const expandedPost = await client.collection('posts').getOne(post.id, {
+        expand: 'tags,featuredImage',
+      });
+      post = { ...post, expand: expandedPost.expand };
+      subposts = await fetchSubpostsByPostId(post.id);
+    } else {
+      console.log('Post not found');
+    }
+  } catch (error) {
+    console.error('Error fetching post:', error);
+  }
+});
+
+const getSeedPrompt = () => selectedBullets.join('\n');
+
+async function handleGenerateIdea() {
+  if (post) {
     try {
-      post = await fetchPostBySlug(slug);
-      if (post) {
-        // Ensure post has expanded tags
-        const expandedPost = await client.collection('posts').getOne(post.id, {
-          expand: 'tags,featuredImage'
-        });
-        post = { ...post, expand: expandedPost.expand };
-        subposts = await fetchSubpostsByPostId(post.id);
+      const newSubpost: GenerateBlogResponse = await generateBlogResponse(
+        getSeedPrompt(),
+        post.id,
+        authModel
+      );
+      if (newSubpost && newSubpost.slug) {
+        goto(`/subposts/${newSubpost.slug}`);
       } else {
-        console.log("Post not found");
+        console.error('Failed to create new subpost');
       }
     } catch (error) {
-      console.error("Error fetching post:", error);
+      console.error('Error generating subpost:', error);
     }
+  } else {
+    console.error('Post data is not set');
+  }
+}
+
+function handleServiceChange(event: CustomEvent<string>) {
+  selectedService = event.detail;
+  serviceModelSelectionStore.update((store) => ({
+    ...store,
+    selectedService,
+  }));
+}
+
+function handleModelChange(event: CustomEvent<string>) {
+  selectedModel = event.detail;
+  serviceModelSelectionStore.update((store) => ({
+    ...store,
+    selectedModel,
+  }));
+}
+
+function toggleBullet(bullet: string) {
+  selectedBullets = selectedBullets.includes(bullet)
+    ? selectedBullets.filter((b) => b !== bullet)
+    : [...selectedBullets, bullet];
+}
+
+function parseBulletPoints(
+  text: string
+): { heading: string; bullets: string[] }[] {
+  const sections: { heading: string; bullets: string[] }[] = [];
+  const lines = text.split('\n');
+
+  let currentHeading = '';
+  let currentBullets: string[] = [];
+
+  for (const line of lines) {
+    if (line.startsWith('#')) {
+      if (currentHeading && currentBullets.length > 0) {
+        sections.push({ heading: currentHeading, bullets: currentBullets });
+      }
+      currentHeading = line.replace(/^#+\s*/, '').trim();
+      currentBullets = [];
+    } else if (line.match(/^\s*[-*]\s+(.+)/)) {
+      const bullet = line.replace(/^\s*[-*]\s+/, '').trim();
+      currentBullets.push(bullet);
+    }
+  }
+
+  if (currentHeading && currentBullets.length > 0) {
+    sections.push({ heading: currentHeading, bullets: currentBullets });
+  }
+
+  return sections;
+}
+
+$: if (post) {
+  processedBody = post.body.replace(/^(#+)\s+(.*)/gm, (match, p1, p2) => {
+    const level = p1.length;
+    const fontSize = `text-${4 - level + 1}xl`;
+    const classes = `${fontSize} font-bold mb-4`;
+    return `<h${level} class="${classes}">${p2}</h${level}>`;
   });
-
-  const getSeedPrompt = () => selectedBullets.join("\n");
-
-  async function handleGenerateIdea() {
-    if (post) {
-      try {
-        const newSubpost: GenerateBlogResponse = await generateBlogResponse(getSeedPrompt(), post.id, authModel);
-        if (newSubpost && newSubpost.slug) {
-          goto(`/subposts/${newSubpost.slug}`);
-        } else {
-          console.error('Failed to create new subpost');
-        }
-      } catch (error) {
-        console.error('Error generating subpost:', error);
-      }
-    } else {
-      console.error('Post data is not set');
-    }
-  }
-
-  function handleServiceChange(event: CustomEvent<string>) {
-    selectedService = event.detail;
-    serviceModelSelectionStore.update(store => ({
-      ...store,
-      selectedService
-    }));
-  }
-
-  function handleModelChange(event: CustomEvent<string>) {
-    selectedModel = event.detail;
-    serviceModelSelectionStore.update(store => ({
-      ...store,
-      selectedModel
-    }));
-  }
-
-  function toggleBullet(bullet: string) {
-    selectedBullets = selectedBullets.includes(bullet)
-      ? selectedBullets.filter(b => b !== bullet)
-      : [...selectedBullets, bullet];
-  }
-
-  function parseBulletPoints(text: string): { heading: string; bullets: string[] }[] {
-    const sections: { heading: string; bullets: string[] }[] = [];
-    const lines = text.split("\n");
-
-    let currentHeading = "";
-    let currentBullets: string[] = [];
-
-    for (const line of lines) {
-      if (line.startsWith("#")) {
-        if (currentHeading && currentBullets.length > 0) {
-          sections.push({ heading: currentHeading, bullets: currentBullets });
-        }
-        currentHeading = line.replace(/^#+\s*/, "").trim();
-        currentBullets = [];
-      } else if (line.match(/^\s*[-*]\s+(.+)/)) {
-        const bullet = line.replace(/^\s*[-*]\s+/, "").trim();
-        currentBullets.push(bullet);
-      }
-    }
-
-    if (currentHeading && currentBullets.length > 0) {
-      sections.push({ heading: currentHeading, bullets: currentBullets });
-    }
-
-    return sections;
-  }
-
-  $: if (post) {
-    processedBody = post.body.replace(/^(#+)\s+(.*)/gm, (match, p1, p2) => {
-      const level = p1.length;
-      const fontSize = `text-${4 - level + 1}xl`;
-      const classes = `${fontSize} font-bold mb-4`;
-      return `<h${level} class="${classes}">${p2}</h${level}>`;
-    });
-  }
+}
 </script>
 
 <LoginGuard>
@@ -132,17 +144,28 @@
         {#if post.expand?.featuredImage}
           {@const imageRecord = post.expand.featuredImage}
           {@const imageUrl = imageRecord?.file ? client.getFileUrl(imageRecord, imageRecord.file) : ''}
-          <img src={imageUrl} alt={post.title} class="mx-auto rounded-lg shadow-md" />
+          <img
+            src={imageUrl}
+            alt={post.title}
+            class="mx-auto rounded-lg shadow-md"
+          />
           <figcaption class="mt-2 text-center text-sm">{post.title}</figcaption>
         {:else}
-          <img src="https://via.placeholder.com/800x400.png?text=AI+Blog" alt="Placeholder" class="mx-auto rounded-lg shadow-md" />
+          <img
+            src="https://via.placeholder.com/800x400.png?text=AI+Blog"
+            alt="Placeholder"
+            class="mx-auto rounded-lg shadow-md"
+          />
         {/if}
       </figure>
 
       <h1 class="mb-4 text-4xl font-bold">{post.title}</h1>
 
       <section class="mt-8">
-        <button class="btn btn-block mt-2 text-center" on:click={() => selectedBullets = []}>
+        <button
+          class="btn btn-block mt-2 text-center"
+          on:click={() => selectedBullets = []}
+        >
           Clear Selection
         </button>
         <div class="mt-8">
@@ -193,8 +216,8 @@
 </LoginGuard>
 
 <style>
-  .bullet-point:hover {
-    transform: translateY(-5px);
-    transition: transform 0.3s ease;
-  }
+.bullet-point:hover {
+  transform: translateY(-5px);
+  transition: transform 0.3s ease;
+}
 </style>

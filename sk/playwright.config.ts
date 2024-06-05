@@ -1,4 +1,4 @@
-import type { PlaywrightTestConfig } from "@playwright/test";
+import type { PlaywrightTestConfig } from '@playwright/test';
 
 const config: PlaywrightTestConfig = {
   use: {
@@ -6,9 +6,9 @@ const config: PlaywrightTestConfig = {
     // viewport: { width: 1280, height: 768 },
     // video: "on-first-retry",
     // make sure "npm run dev" is running for localhost:5173 to work
-    baseURL: "http://localhost:8090",
+    baseURL: 'http://localhost:8090',
   },
-  reporter: [["html"]],
+  reporter: [['html']],
 };
 
 export default config;

@@ -123,16 +123,12 @@ function add_attribute(name, value, boolean) {
   const assignment = boolean && value === true ? "" : `="${escape(value, true)}"`;
   return ` ${name}${assignment}`;
 }
-function add_classes(classes) {
-  return classes ? ` class="${classes}"` : "";
-}
 export {
-  add_attribute as a,
-  escape as b,
+  createEventDispatcher as a,
+  add_attribute as b,
   create_ssr_component as c,
-  add_classes as d,
+  escape as d,
   each as e,
-  createEventDispatcher as f,
   getContext as g,
   missing_component as m,
   onDestroy as o,

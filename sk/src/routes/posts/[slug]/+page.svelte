@@ -1,12 +1,12 @@
 <script lang="ts">
-import { page } from "$app/stores";
-import { onMount } from "svelte";
-import { postsStore } from "$lib/stores/postStore";
-import { fetchPostBySlug } from "$lib/services/postService";
-import type { PostsResponse } from "$lib/pocketbase/generated-types";
-import Markdown from "svelte-markdown";
-import TagGroup from "$lib/components/TagGroup.svelte";
-import LoginGuard from "$lib/components/LoginGuard.svelte";
+import { page } from '$app/stores';
+import { onMount } from 'svelte';
+import { postsStore } from '$lib/stores/postStore';
+import { fetchPostBySlug } from '$lib/services/postService';
+import type { PostsResponse } from '$lib/pocketbase/generated-types';
+import Markdown from 'svelte-markdown';
+import TagGroup from '$lib/components/TagGroup.svelte';
+import LoginGuard from '$lib/components/LoginGuard.svelte';
 
 let post: PostsResponse | undefined;
 $: slug = $page.params.slug;
@@ -15,12 +15,12 @@ onMount(async () => {
   try {
     post = await fetchPostBySlug(slug);
     if (!post) {
-      console.log("Post not found");
+      console.log('Post not found');
       // Handle the case when the post is not found
       // For example, you can redirect to a 404 page or show an error message
     }
   } catch (error) {
-    console.error("Error fetching post:", error);
+    console.error('Error fetching post:', error);
     // Handle the error case
     // For example, you can show an error message to the user
   }

@@ -5,10 +5,10 @@ import "../../../../../chunks/index2.js";
 import "../../../../../chunks/Alerts.js";
 import { a as availableServices, S as ServiceSelector } from "../../../../../chunks/ServiceSelector.js";
 import "marked";
-/* empty css                                                            */import { L as LoginGuard } from "../../../../../chunks/LoginGuard.js";
+import { L as LoginGuard } from "../../../../../chunks/LoginGuard.js";
 const _page_svelte_svelte_type_style_lang = "";
 const css = {
-  code: ".bullet-point.svelte-1s8f3y1:hover{transform:translateY(-5px);transition:transform 0.3s ease}",
+  code: ".bullet-point.svelte-11zpmt5:hover{transform:translateY(-5px);transition:transform 0.3s ease}",
   map: null
 };
 const Page = create_ssr_component(($$result, $$props, $$bindings, slots) => {

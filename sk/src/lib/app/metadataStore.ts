@@ -1,5 +1,5 @@
 // metadataStore.ts
-import { writable } from "svelte/store";
+import { writable } from 'svelte/store';
 
 export interface Metadata {
   title?: string;

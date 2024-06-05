@@ -2,8 +2,7 @@ import { s as subscribe } from "../../../../chunks/utils.js";
 import { c as create_ssr_component, v as validate_component } from "../../../../chunks/ssr.js";
 import { p as page } from "../../../../chunks/stores.js";
 import "../../../../chunks/index2.js";
-import "marked";
-/* empty css                                                         */import "../../../../chunks/Alerts.js";
+import "../../../../chunks/Alerts.js";
 import { L as LoginGuard } from "../../../../chunks/LoginGuard.js";
 const Page = create_ssr_component(($$result, $$props, $$bindings, slots) => {
   let $$unsubscribe_page;

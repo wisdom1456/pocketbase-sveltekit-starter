@@ -1,10 +1,10 @@
 <script lang="ts">
-import { client } from "$lib/pocketbase";
-import type { PostsResponse } from "$lib/pocketbase/generated-types";
+import { client } from '$lib/pocketbase';
+import type { PostsResponse } from '$lib/pocketbase/generated-types';
 
 export let post: PostsResponse;
-export let alt: string = "";
-export let className: string = "";
+export let alt: string = '';
+export let className: string = '';
 </script>
 
 <!-- Image.svelte -->

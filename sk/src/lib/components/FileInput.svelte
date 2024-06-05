@@ -1,15 +1,15 @@
 <script lang="ts">
-import { createEventDispatcher } from "svelte";
+import { createEventDispatcher } from 'svelte';
 
 export let files: FileList;
-export let accept = ".*";
+export let accept = '.*';
 export let multiple = true;
 export let pasteFile = false;
 const dispatch = createEventDispatcher();
 function paste(e: ClipboardEvent) {
   if (pasteFile && e.clipboardData?.files) {
     files = e.clipboardData.files;
-    dispatch("change", files);
+    dispatch('change', files);
   }
 }
 </script>
@@ -35,7 +35,7 @@ label.file {
   position: relative;
   display: flex;
   justify-content: center;
-  input[type="file"] {
+  input[type='file'] {
     position: absolute;
     width: 100%;
     height: 100%;

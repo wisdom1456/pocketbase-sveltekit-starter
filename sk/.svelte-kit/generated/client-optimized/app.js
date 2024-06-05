@@ -37,7 +37,7 @@ export const dictionary = {
 		"/posts/[slug]": [11],
 		"/posts/[slug]/edit": [12],
 		"/posts/[slug]/inspire": [13],
-		"/reflect": [14],
+		"/profile": [14],
 		"/remember": [15],
 		"/settings": [16],
 		"/subposts/[slug]": [17],

@@ -16,6 +16,6 @@ export const handleError: HandleError = async ({ error, event }) => {
   console.error('Error occurred:', error);
   return {
     status: 500,
-    body: { message: 'An unexpected error occurred.' }
+    body: { message: 'An unexpected error occurred.' },
   };
 };

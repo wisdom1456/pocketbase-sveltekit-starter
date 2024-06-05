@@ -161,23 +161,29 @@ export async function createPost(
 }
 
 // Fetch subposts by post ID
-export async function fetchSubpostsByPostId(postId: string): Promise<SubpostsResponse[]> {
+export async function fetchSubpostsByPostId(
+  postId: string
+): Promise<SubpostsResponse[]> {
   try {
     if (!postId) throw new Error('Post ID is required');
-    
+
     // Example of disabling auto-cancellation or increasing timeout
-    const subpostsResponse = await client.collection('subposts').getFullList<SubpostsResponse>(200, {
-      filter: `post = "${postId}"`,
-      expand: 'post',
-      // You can disable auto-cancellation here if possible or increase the timeout
-      $autoCancel: false,  // This depends on the Pocketbase client configuration
-      // timeout: 60000,     // Example of increasing timeout
-    });
+    const subpostsResponse = await client
+      .collection('subposts')
+      .getFullList<SubpostsResponse>(200, {
+        filter: `post = "${postId}"`,
+        expand: 'post',
+        // You can disable auto-cancellation here if possible or increase the timeout
+        $autoCancel: false, // This depends on the Pocketbase client configuration
+        // timeout: 60000,     // Example of increasing timeout
+      });
 
     return subpostsResponse;
   } catch (error: any) {
     console.error('Error fetching subposts:', error);
-    throw new Error(`Failed to fetch subposts for post ID ${postId}: ${error.message}`);
+    throw new Error(
+      `Failed to fetch subposts for post ID ${postId}: ${error.message}`
+    );
   }
 }
 

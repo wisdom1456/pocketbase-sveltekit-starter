@@ -1,5 +1,5 @@
 // serviceModelSelectionStore.ts
-import { writable } from "svelte/store";
+import { writable } from 'svelte/store';
 
 export interface ServiceModelSelection {
   selectedService: string;
@@ -7,6 +7,6 @@ export interface ServiceModelSelection {
 }
 
 export const serviceModelSelectionStore = writable<ServiceModelSelection>({
-  selectedService: "",
-  selectedModel: "",
+  selectedService: '',
+  selectedModel: '',
 });

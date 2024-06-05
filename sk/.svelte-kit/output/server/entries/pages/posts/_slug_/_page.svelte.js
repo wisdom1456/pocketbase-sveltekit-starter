@@ -4,7 +4,7 @@ import { p as page } from "../../../../chunks/stores.js";
 import "../../../../chunks/index2.js";
 import "../../../../chunks/Alerts.js";
 import "marked";
-/* empty css                                                         */import { L as LoginGuard } from "../../../../chunks/LoginGuard.js";
+import { L as LoginGuard } from "../../../../chunks/LoginGuard.js";
 const Page = create_ssr_component(($$result, $$props, $$bindings, slots) => {
   let $page, $$unsubscribe_page;
   $$unsubscribe_page = subscribe(page, (value) => $page = value);

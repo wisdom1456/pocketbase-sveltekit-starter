@@ -1,11 +1,11 @@
 import { s as subscribe, a as set_store_value } from "../../chunks/utils.js";
-import { c as create_ssr_component, a as add_attribute, e as each, b as escape, o as onDestroy, v as validate_component, d as add_classes } from "../../chunks/ssr.js";
+import { c as create_ssr_component, a as createEventDispatcher, e as each, b as add_attribute, d as escape, o as onDestroy, v as validate_component } from "../../chunks/ssr.js";
 import PocketBase from "pocketbase";
 import { m as metadata } from "../../chunks/metadataStore.js";
 import { a as authModel, c as client, b as beforeNavigate } from "../../chunks/index2.js";
 import { A as Alerts } from "../../chunks/Alerts.js";
 import { b as base } from "../../chunks/paths.js";
-import { p as page } from "../../chunks/stores.js";
+import { w as writable } from "../../chunks/index.js";
 import { L as LoginForm } from "../../chunks/LoginForm.js";
 const site = {
   name: "mind",
@@ -13,11 +13,10 @@ const site = {
   description: "Capture your inspiration and ideas with mind. A simple and elegant journaling app that helps you stay organized."
 };
 const app = "";
-const Dialog = create_ssr_component(($$result, $$props, $$bindings, slots) => {
-  let { open } = $$props;
-  if ($$props.open === void 0 && $$bindings.open && open !== void 0)
-    $$bindings.open(open);
-  return `<dialog class="modal" ${open ? "open" : ""}><div class="modal-box">${slots.default ? slots.default({}) : ``} <div class="modal-action"><button class="btn btn-primary" data-svelte-h="svelte-9f8voo">Close</button></div></div> </dialog>`;
+const theme = writable(localStorage.getItem("theme") || "light");
+theme.subscribe((value) => {
+  document.documentElement.setAttribute("data-theme", value);
+  localStorage.setItem("theme", value);
 });
 const themes = [
   {
@@ -310,19 +309,46 @@ const themes = [
   }
 ];
 const ThemeSwitch = create_ssr_component(($$result, $$props, $$bindings, slots) => {
-  let modal;
-  return `<button type="button" aria-label="Open Theme Modal" data-svelte-h="svelte-1tvms4d">Theme</button> <dialog class="modal" id="modal"${add_attribute("this", modal, 0)}><div class="modal-box w-11/12 max-w-5xl"><h3 class="text-lg font-bold" data-svelte-h="svelte-k7rklh">Select a Theme</h3> <div class="grid grid-cols-1 gap-4 py-4 md:grid-cols-2 lg:grid-cols-3">${each(themes, (theme) => {
-    return `<button class="cursor-pointer overflow-hidden rounded-lg border border-base-content/20 outline outline-2 outline-offset-2 outline-transparent hover:border-base-content/40"${add_attribute("data-set-theme", theme.id, 0)} data-act-class="!outline-base-content"><div${add_attribute("data-theme", theme.id, 0)} class="w-full bg-base-100 font-sans text-base-content"><div class="grid grid-cols-5 grid-rows-3"><div class="col-start-1 row-span-2 row-start-1 bg-base-200"></div> <div class="col-start-1 row-start-3 bg-base-300"></div> <div class="col-span-4 col-start-2 row-span-3 row-start-1 flex flex-col gap-1 bg-base-100 p-2"><div class="font-bold">${escape(theme.name)}</div> <div class="flex flex-wrap gap-1" data-svelte-h="svelte-qkhqyc"><div class="flex aspect-square w-5 items-center justify-center rounded bg-primary lg:w-6"><div class="text-sm font-bold text-primary-content">A</div></div> <div class="flex aspect-square w-5 items-center justify-center rounded bg-secondary lg:w-6"><div class="text-sm font-bold text-secondary-content">A
-                    </div></div> <div class="flex aspect-square w-5 items-center justify-center rounded bg-accent lg:w-6"><div class="text-sm font-bold text-accent-content">A</div></div> <div class="flex aspect-square w-5 items-center justify-center rounded bg-neutral lg:w-6"><div class="text-sm font-bold text-neutral-content">A</div></div> </div></div> </div></div> </button>`;
-  })}</div></div> <form method="dialog" class="modal-backdrop" data-svelte-h="svelte-nzabrk"><button>Close</button></form></dialog>`;
+  createEventDispatcher();
+  return `<div class="grid grid-cols-1 gap-4 py-4 md:grid-cols-2 lg:grid-cols-3">${each(themes, (theme2) => {
+    return `<button class="cursor-pointer overflow-hidden rounded-lg border border-base-content/20 shadow-md transition-shadow duration-300 hover:shadow-lg"><div${add_attribute("data-theme", theme2.id, 0)} class="w-full bg-base-100 p-2 font-sans text-base-content"><div class="grid grid-cols-5 grid-rows-3 gap-2"><div class="col-start-1 row-span-2 row-start-1 rounded bg-base-200"></div> <div class="col-start-1 row-start-3 rounded bg-base-300"></div> <div class="col-span-4 col-start-2 row-span-3 row-start-1 flex flex-col gap-1 rounded bg-base-100 p-2"><div class="font-bold">${escape(theme2.name)}</div> <div class="flex flex-wrap gap-1" data-svelte-h="svelte-ksmbnu"><div class="flex aspect-square w-5 items-center justify-center rounded bg-primary lg:w-6"><div class="text-sm font-bold text-primary-content">A</div></div> <div class="flex aspect-square w-5 items-center justify-center rounded bg-secondary lg:w-6"><div class="text-sm font-bold text-secondary-content">A</div></div> <div class="flex aspect-square w-5 items-center justify-center rounded bg-accent lg:w-6"><div class="text-sm font-bold text-accent-content">A</div></div> <div class="flex aspect-square w-5 items-center justify-center rounded bg-neutral lg:w-6"><div class="text-sm font-bold text-neutral-content">A</div></div> </div></div> </div></div> </button>`;
+  })}</div>`;
+});
+const Dialog = create_ssr_component(($$result, $$props, $$bindings, slots) => {
+  let { open } = $$props;
+  function handleClose() {
+    open = false;
+    console.log("Dialog closed");
+  }
+  function handleClickOutside(event) {
+    const target = event.target;
+    if (target && !target.closest(".modal-box")) {
+      handleClose();
+      console.log("Clicked outside the dialog, closing dialog");
+    }
+  }
+  if ($$props.open === void 0 && $$bindings.open && open !== void 0)
+    $$bindings.open(open);
+  {
+    if (open) {
+      document.addEventListener("click", handleClickOutside);
+      console.log("Dialog opened, added click event listener");
+    } else {
+      document.removeEventListener("click", handleClickOutside);
+      console.log("Dialog closed, removed click event listener");
+    }
+  }
+  return `<dialog class="modal" ${open ? "open" : ""}><div class="modal-box">${slots.default ? slots.default({}) : ``} <div class="modal-action"><button class="btn btn-primary" data-svelte-h="svelte-9f8voo">Close</button></div></div></dialog>`;
 });
 const LoginBadge = create_ssr_component(($$result, $$props, $$bindings, slots) => {
   let $authModel, $$unsubscribe_authModel;
   $$unsubscribe_authModel = subscribe(authModel, (value) => $authModel = value);
   let isDialogOpen = false;
   let isDropdownOpen = false;
+  let isThemeModalOpen = false;
   const unsubscribe = client.authStore.onChange(
     (token, model) => {
+      console.log("Auth state changed:", { token, model });
     },
     false
   );
@@ -335,7 +361,7 @@ const LoginBadge = create_ssr_component(($$result, $$props, $$bindings, slots) =
   do {
     $$settled = true;
     $$result.head = previous_head;
-    $$rendered = `${$authModel ? `<div class="relative inline-block text-left"><button class="dropdown" aria-haspopup="true"${add_attribute("aria-expanded", isDropdownOpen, 0)}><div tabindex="0" role="button" class="btn">${escape($authModel?.name || $authModel?.username || "User")}</div></button> ${``}</div>` : `<button class="btn btn-primary" data-svelte-h="svelte-j0oxai">Sign In</button>`} ${validate_component(Dialog, "Dialog").$$render(
+    $$rendered = `${$authModel ? `<div class="relative inline-block text-left"><button class="dropdown" aria-haspopup="true"${add_attribute("aria-expanded", isDropdownOpen, 0)}><div tabindex="0" role="button" class="btn">${escape($authModel?.name || $authModel?.username || "User")}</div></button> ${``}</div>` : `<button class="btn btn-primary" data-svelte-h="svelte-ef0exl">Sign In</button>`}  ${validate_component(Dialog, "Dialog").$$render(
       $$result,
       { open: isDialogOpen },
       {
@@ -346,7 +372,21 @@ const LoginBadge = create_ssr_component(($$result, $$props, $$bindings, slots) =
       },
       {
         default: () => {
-          return `${$authModel ? `<div><button data-svelte-h="svelte-11z22cn">Sign Out</button></div>` : `<div>${validate_component(LoginForm, "LoginForm").$$render($$result, {}, {}, {})}</div>`}`;
+          return `<div class="tabs"><button class="${"tab tab-bordered " + escape("tab-active", true)}">Sign In</button> <button class="${"tab tab-bordered " + escape("", true)}">Sign Up</button></div> ${`<div>${validate_component(LoginForm, "LoginForm").$$render($$result, { mode: "signin" }, {}, {})}</div>`}`;
+        }
+      }
+    )} ${validate_component(Dialog, "Dialog").$$render(
+      $$result,
+      { open: isThemeModalOpen },
+      {
+        open: ($$value) => {
+          isThemeModalOpen = $$value;
+          $$settled = false;
+        }
+      },
+      {
+        default: () => {
+          return `${validate_component(ThemeSwitch, "ThemeSwitch").$$render($$result, {}, {}, {})}`;
         }
       }
     )}`;
@@ -356,16 +396,9 @@ const LoginBadge = create_ssr_component(($$result, $$props, $$bindings, slots) =
 });
 const Nav = create_ssr_component(($$result, $$props, $$bindings, slots) => {
   let $authModel, $$unsubscribe_authModel;
-  let $page, $$unsubscribe_page;
   $$unsubscribe_authModel = subscribe(authModel, (value) => $authModel = value);
-  $$unsubscribe_page = subscribe(page, (value) => $page = value);
   let isOpen = false;
-  const appLinks = [
-    ["/create/", "Create"],
-    ["/remember/", "Remember"],
-    //,
-    ["/inspire/", "Inspire"]
-  ];
+  const appLinks = [["/create/", "Create"], ["/remember/", "Remember"], ["/inspire/", "Inspire"]];
   const landingLinks = [
     ["/#features", "Features"],
     ["/#how-it-works", "How It Works"],
@@ -373,16 +406,35 @@ const Nav = create_ssr_component(($$result, $$props, $$bindings, slots) => {
     ["/#testimonials", "Testimonials"],
     ["/#contact", "Contact"]
   ];
+  function closeMenu() {
+    isOpen = false;
+  }
+  function handleClickOutside(event) {
+    const target = event.target;
+    if (target && !target.closest(".dropdown-content")) {
+      closeMenu();
+    }
+  }
+  {
+    if (isOpen) {
+      document.addEventListener("click", handleClickOutside);
+    } else {
+      document.removeEventListener("click", handleClickOutside);
+    }
+  }
   $$unsubscribe_authModel();
-  $$unsubscribe_page();
-  return `<nav><div class="navbar"><div class="navbar-start"><div class="dropdown" role="button" aria-haspopup="true"${add_attribute("aria-expanded", isOpen, 0)}${add_attribute("tabindex", 0, 0)}><button class="btn btn-ghost lg:hidden" tabindex="0" data-svelte-h="svelte-hulv4i"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h8m-8 6h16"></path></svg></button> ${``}</div> <a href="/" class="btn btn-ghost text-xl normal-case" data-svelte-h="svelte-843whk">mind.ai</a></div> <div class="navbar-center hidden lg:flex"><ul class="menu menu-horizontal p-0">${$authModel ? `${each(appLinks, ([path, label]) => {
-    return `<li class="p-4"><a${add_attribute("href", `${base}${path}`, 0)}${add_classes(($page.url.pathname === path ? "active" : "").trim())}>${escape(label)}</a> </li>`;
+  return `<nav class="navbar bg-base-100 shadow-lg"><div class="navbar-start"><div class="dropdown" role="button" aria-haspopup="true"${add_attribute("aria-expanded", isOpen, 0)}${add_attribute("tabindex", 0, 0)}><button class="btn btn-ghost lg:hidden" tabindex="0" data-svelte-h="svelte-18occ28"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h8m-8 6h16"></path></svg></button> ${isOpen ? `<ul class="menu-compact menu dropdown-content z-20 mt-3 w-52 rounded-box bg-base-300 p-2 shadow">${$authModel ? `${each(appLinks, ([path, label]) => {
+    return `<li><a${add_attribute("href", `${base}${path}`, 0)} class="text-primary-content">${escape(label)}</a></li>`;
   })}` : `${each(landingLinks, ([path, label]) => {
-    return `<li class="p-4"><a${add_attribute("href", path, 0)}>${escape(label)}</a></li>`;
-  })}`}</ul></div> <div class="navbar-end">${validate_component(LoginBadge, "LoginBadge").$$render($$result, {}, {}, {})}</div></div></nav>`;
+    return `<li><a${add_attribute("href", path, 0)} class="text-base-content">${escape(label)}</a></li>`;
+  })}`}</ul>` : ``}</div> <a href="/" class="btn btn-ghost text-xl normal-case" data-svelte-h="svelte-843whk">mind.ai</a></div> <div class="navbar-center hidden lg:flex"><ul class="menu menu-horizontal p-0">${$authModel ? `${each(appLinks, ([path, label]) => {
+    return `<li><a${add_attribute("href", `${base}${path}`, 0)} class="text-primary-content">${escape(label)}</a></li>`;
+  })}` : `${each(landingLinks, ([path, label]) => {
+    return `<li><a${add_attribute("href", path, 0)} class="text-base-content">${escape(label)}</a></li>`;
+  })}`}</ul></div> <div class="navbar-end">${validate_component(LoginBadge, "LoginBadge").$$render($$result, {}, {}, {})}</div></nav>`;
 });
 const Footer = create_ssr_component(($$result, $$props, $$bindings, slots) => {
-  return `  <footer class="footer footer-center bg-base-300 py-8 text-base-content"><div><p class="font-bold" data-svelte-h="svelte-122hi0w">mind.ai</p> <p>Cultivating Brilliant Ideas Since 2009 - ${validate_component(ThemeSwitch, "ThemeSwitch").$$render($$result, {}, {}, {})}</p> <p data-svelte-h="svelte-hok76l">modible - 2024 - All right reserved</p></div> <div data-svelte-h="svelte-5z7uuo"><div class="grid grid-flow-col gap-4"><a href="/"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" class="fill-current"><path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z"></path></svg></a> <a href="/"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" class="fill-current"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"></path></svg></a> <a href="/"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" class="fill-current"><path d="M9 8h-3v4h3v12h5v-12h3.642l.358-4h-4v-1.667c0-.955.192-1.333 1.115-1.333h2.885v-5h-3.808c-3.596 0-5.192 1.583-5.192 4.615v3.385z"></path></svg></a></div></div></footer>`;
+  return `<footer class="footer footer-center bg-base-300 p-4 text-base-content" data-svelte-h="svelte-132aqf4"><div><p class="font-bold text-primary-content">mind.ai</p> <p class="text-primary-content">Cultivating Brilliant Ideas Since 2009</p> <p class="text-primary-content">modible - 2024 - All right reserved</p></div> <div><div class="grid grid-flow-col gap-4"><a href="/" class="text-primary-content"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" class="fill-current"><path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z"></path></svg></a> <a href="/" class="text-primary-content"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" class="fill-current"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"></path></svg></a> <a href="/" class="text-primary-content"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" class="fill-current"><path d="M12 2c-5.514 0-10 4.486-10 10s4.486 10 10 10 10-4.486 10-10-4.486-10-10-10zm1 17.93v-6.93h-2v6.93c-3.392-.491-6-3.392-6-6.93s2.608-6.439 6-6.93v6.93h2v-6.93c3.392.491 6 3.392 6 6.93s-2.608 6.439-6 6.93z"></path></svg></a></div></div></footer>`;
 });
 new PocketBase(`$("http://localhost:8090/")`);
 const Layout = create_ssr_component(($$result, $$props, $$bindings, slots) => {

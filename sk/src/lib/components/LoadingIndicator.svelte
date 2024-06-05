@@ -1,11 +1,9 @@
+<!-- src/lib/components/LoadingIndicator.svelte -->
 <script>
-// A reactive variable to hold the message
-export let message = "Loading...";
+export let message = 'Loading...';
 </script>
 
-<div
-  class="flex h-72 min-h-[calc(100vh-200px)] flex-col items-center justify-center"
->
+<div class="flex h-72 min-h-screen flex-col items-center justify-center">
   <div class="text-center">
     <svg
       class="mx-auto h-8 w-8 animate-spin text-gray-800"
@@ -28,7 +26,9 @@ export let message = "Loading...";
       ></path>
     </svg>
     <p class="mt-4 text-lg font-medium">{message}</p>
-    <progress class="progress progress-primary mt-2 w-56" value="1" max="100"
-    ></progress>
   </div>
 </div>
+
+<style>
+/* Add any custom styles if needed */
+</style>

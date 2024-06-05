@@ -1,16 +1,16 @@
 <script lang="ts">
-import TagGroup from "$lib/components/TagGroup.svelte";
-import type { PostsResponse } from "$lib/pocketbase/generated-types";
-import { client } from "$lib/pocketbase";
-import { onMount } from "svelte";
+import TagGroup from '$lib/components/TagGroup.svelte';
+import type { PostsResponse } from '$lib/pocketbase/generated-types';
+import { client } from '$lib/pocketbase';
+import { onMount } from 'svelte';
 
 export let post: PostsResponse;
 let tags: string[] = [];
-let tagInput: string = "";
+let tagInput: string = '';
 
 onMount(async () => {
   await loadTags();
-  tagInput = tags.join(", ");
+  tagInput = tags.join(', ');
 });
 
 async function loadTags() {
@@ -18,13 +18,13 @@ async function loadTags() {
     tags = post.expand.tags.map((tag: { title: any }) => tag.title);
   } else {
     const postsTagsResponse = await client
-      .collection("postsTags")
+      .collection('postsTags')
       .getList(1, 50, {
         filter: `posts = "${post.id}"`,
       });
     const tagIds = postsTagsResponse.items.map((postTag) => postTag.tags);
     const loadedTags = await Promise.all(
-      tagIds.map((tagId) => client.collection("tags").getOne(tagId))
+      tagIds.map((tagId) => client.collection('tags').getOne(tagId))
     );
     tags = loadedTags.map((tag) => tag.title);
   }
@@ -40,7 +40,7 @@ function handleInput(event: Event) {
   const input = (event.target as HTMLInputElement).value;
   tagInput = input;
   tags = input
-    .split(",")
+    .split(',')
     .map((tag) => tag.trim())
     .filter((tag) => tag);
 }
