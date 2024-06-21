@@ -1,4 +1,3 @@
-<!-- PostList.svelte -->
 <script lang="ts">
   import type { PostsResponse } from '$lib/pocketbase/generated-types';
   import PostCard from './PostCard.svelte';

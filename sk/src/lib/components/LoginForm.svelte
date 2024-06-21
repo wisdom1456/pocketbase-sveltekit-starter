@@ -39,25 +39,25 @@
 
   <label class="form-control">
     <span class="label-text">Email</span>
-    <input class="input input-bordered" type="email" bind:value={email} required placeholder="Email" />
+    <input class="input input-bordered" type="email" bind:value={email} required placeholder="Email" autocomplete="email" />
   </label>
 
   {#if mode === 'signup'}
     <label class="form-control">
       <span class="label-text">Name</span>
-      <input class="input input-bordered" type="text" bind:value={name} required placeholder="Name" />
+      <input class="input input-bordered" type="text" bind:value={name} required placeholder="Name" autocomplete="name" />
     </label>
   {/if}
 
   <label class="form-control">
     <span class="label-text">Password</span>
-    <input class="input input-bordered" type="password" bind:value={password} required placeholder="Password" />
+    <input class="input input-bordered" type="password" bind:value={password} required placeholder="Password" autocomplete="current-password" />
   </label>
 
   {#if mode === 'signup'}
     <label class="form-control">
       <span class="label-text">Confirm Password</span>
-      <input class="input input-bordered" type="password" bind:value={passwordConfirm} required placeholder="Confirm Password" />
+      <input class="input input-bordered" type="password" bind:value={passwordConfirm} required placeholder="Confirm Password" autocomplete="new-password" />
     </label>
   {/if}
 
