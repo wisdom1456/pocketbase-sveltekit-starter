@@ -1,3 +1,4 @@
+<!-- Navbar.svelte -->
 <script lang="ts">
   import { base } from '$app/paths';
   import { page } from '$app/stores';
@@ -36,47 +37,46 @@
   } else {
     document.removeEventListener('click', handleClickOutside);
   }
-  </script>
-  
-  <nav class="navbar bg-base-100 shadow-lg">
-    <div class="navbar-start">
-      <div class="dropdown" on:mouseleave={closeMenu} role="button" aria-haspopup="true" aria-expanded={isOpen} tabindex={0}>
-        <button class="btn btn-ghost lg:hidden" on:click={toggleMenu} tabindex="0">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h8m-8 6h16" />
-          </svg>
-        </button>
-        {#if isOpen}
-          <ul class="menu-compact menu dropdown-content z-20 mt-3 w-52 rounded-box bg-base-300 p-2 shadow">
-            {#if $authModel}
-              {#each appLinks as [path, label]}
-                <li><a href={`${base}${path}`} class="text-primary-content" on:click={closeMenu}>{label}</a></li>
-              {/each}
-            {:else}
-              {#each landingLinks as [path, label]}
-                <li><a href={path} class="text-base-content" on:click={closeMenu}>{label}</a></li>
-              {/each}
-            {/if}
-          </ul>
-        {/if}
-      </div>
-      <a href="/" class="btn btn-ghost text-xl normal-case text-primary">mind.ai</a>
+</script>
+
+<nav class="navbar bg-base-100 shadow-lg sticky top-0 z-50">
+  <div class="navbar-start">
+    <div class="dropdown" on:mouseleave={closeMenu} role="button" aria-haspopup="true" aria-expanded={isOpen} tabindex={0}>
+      <button class="btn btn-ghost lg:hidden" on:click={toggleMenu} tabindex="0">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h8m-8 6h16" />
+        </svg>
+      </button>
+      {#if isOpen}
+        <ul class="menu-compact menu dropdown-content z-20 mt-3 w-52 rounded-box bg-base-300 p-2 shadow">
+          {#if $authModel}
+            {#each appLinks as [path, label]}
+              <li><a href={`${base}${path}`} class="text-primary-content" on:click={closeMenu}>{label}</a></li>
+            {/each}
+          {:else}
+            {#each landingLinks as [path, label]}
+              <li><a href={path} class="text-base-content" on:click={closeMenu}>{label}</a></li>
+            {/each}
+          {/if}
+        </ul>
+      {/if}
     </div>
-    <div class="navbar-center hidden lg:flex">
-      <ul class="menu menu-horizontal p-0">
-        {#if $authModel}
-          {#each appLinks as [path, label]}
-            <li><a href={`${base}${path}`} class="btn btn-ghost text-lg normal-case text-primary">{label}</a></li>
-          {/each}
-        {:else}
-          {#each landingLinks as [path, label]}
-            <li><a href={path} class="text-primary">{label}</a></li>
-          {/each}
-        {/if}
-      </ul>
-    </div>
-    <div class="navbar-end">
-      <LoginBadge />
-    </div>
-  </nav>
-  
+    <a href="/" class="btn btn-ghost text-xl normal-case text-primary">mind.ai</a>
+  </div>
+  <div class="navbar-center hidden lg:flex">
+    <ul class="menu menu-horizontal p-0">
+      {#if $authModel}
+        {#each appLinks as [path, label]}
+          <li><a href={`${base}${path}`} class="btn btn-ghost text-lg normal-case text-primary">{label}</a></li>
+        {/each}
+      {:else}
+        {#each landingLinks as [path, label]}
+          <li><a href={path} class="text-primary">{label}</a></li>
+        {/each}
+      {/if}
+    </ul>
+  </div>
+  <div class="navbar-end">
+    <LoginBadge />
+  </div>
+</nav>

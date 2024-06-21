@@ -1,3 +1,4 @@
+<!-- Parent Component -->
 <script lang="ts">
   import { postsStore, fetchPosts } from '$lib/services/postService';
   import type { PostsResponse } from '$lib/pocketbase/generated-types';
