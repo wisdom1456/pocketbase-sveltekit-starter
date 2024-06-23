@@ -4,11 +4,10 @@
   import { onMount, createEventDispatcher } from 'svelte';
   import { fetchSubpostsByPostId } from '$lib/services/postService';
   import { goto } from '$app/navigation';
-  import Alerts from './alerts.svelte';
 
   export let post: PostsResponse;
   export let featuredImage: string = '';
-  export let tagMode: 'main' | 'few' | 'all' = 'few';
+  export const tagMode: 'main' | 'few' | 'all' = 'few';
 
   let subposts: SubpostsResponse[] = [];
   let errorMessage: string = '';
@@ -21,9 +20,11 @@
       const postID = post?.id;
       if (postID) {
         subposts = await fetchSubpostsByPostId(postID);
+        console.log('Subposts:', subposts); // Console output for testing
       }
     } catch (error) {
       errorMessage = 'Failed to load subposts';
+      console.error('Error fetching subposts:', error); // Console output for errors
     }
   }
 
@@ -67,6 +68,9 @@
       <a href={`/posts/${post.slug}/inspire`} class="btn btn-outline btn-primary btn-xs hover:bg-primary hover:text-white transition-transform transform hover:scale-110" aria-label="Inspire">
         Inspire
       </a>
+      <button on:click={deletePost} class="btn btn-outline btn-danger btn-xs hover:bg-danger hover:text-white transition-transform transform hover:scale-110" aria-label="Delete Post">
+        Delete
+      </button>
     </div>
     <div class="absolute inset-0 bg-gradient-to-b from-primary to-secondary opacity-20 rounded-t-box"></div>
   </div>
@@ -126,12 +130,6 @@
       </time>
     {/if}
   </div>
-
-  
-
-  {#if errorMessage}
-    <Alerts message={errorMessage} type="error" />
-  {/if}
 </article>
 
 <style>

@@ -12,7 +12,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 };
 
 // HandleError hook for global error handling
-export const handleError: HandleError = async ({ error, event }) => {
+export const handleError: HandleError = async ({ error }: { error: any }) => {
   console.error('Error occurred:', error);
   return {
     status: 500,
